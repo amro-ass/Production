@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dashboard Production</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root {
+  --bg:        #f8f9fc;
+  --surface:   #ffffff;
+  --surface2:  #f1f4f9;
+  --surface3:  #e8edf5;
+  --border:    #e2e8f0;
+  --border2:   #cbd5e1;
+
+  --accent:    #2563eb;
+  --accent-lt: #eff6ff;
+  --accent2:   #ea580c;
+  --accent2-lt:#fff7ed;
+  --accent3:   #16a34a;
+  --accent3-lt:#f0fdf4;
+  --purple:    #7c3aed;
+  --purple-lt: #f5f3ff;
+  --danger:    #dc2626;
+  --warn:      #d97706;
+  --cyan:      #0891b2;
+  --cyan-lt:   #ecfeff;
+  --teal:      #0d9488;
+  --teal-lt:   #f0fdfa;
+  --rose:      #e11d48;
+  --rose-lt:   #fff1f2;
+  --indigo:    #4f46e5;
+  --indigo-lt: #eef2ff;
+  --amber-lt:  #fffbeb;
+
+  --text:      #0f172a;
+  --text2:     #475569;
+  --text3:     #94a3b8;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+
+  --radius:    14px;
+  --radius-sm: 9px;
+  --radius-xs: 6px;
+
+  --header-h:  60px;
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+body[dir="rtl"] { font-family: 'Noto Sans Arabic', 'Sora', sans-serif; }
+
+/* ═══════════════════════════════════════
+   LOADER
+═══════════════════════════════════════ */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.5s ease;
+}
+.loader-ring {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text {
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 3px; font-size: 10px; text-transform: uppercase;
+  animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+header {
+  position: sticky; top: 0; z-index: 200;
+  height: var(--header-h);
+  padding: 0 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.logo-area { display: flex; align-items: center; gap: 12px; min-width: 0; flex-shrink: 0; }
+.logo-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; color: white;
+  box-shadow: 0 2px 10px rgba(37,99,235,0.3);
+}
+.logo-text h1 {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.3px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.logo-text p { font-size: 9.5px; color: var(--text3); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 7px; flex-wrap: nowrap; flex-shrink: 0; }
+
+/* Language switcher */
+.lang-switcher {
+  display: flex; align-items: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); overflow: hidden;
+  flex-shrink: 0;
+}
+.lang-btn {
+  padding: 5px 9px; border: none; background: transparent;
+  color: var(--text3); cursor: pointer; font-size: 10.5px; font-weight: 700;
+  font-family: 'Sora', sans-serif; transition: all 0.18s;
+  letter-spacing: 0.3px;
+}
+.lang-btn.active { background: var(--accent); color: #fff; }
+.lang-btn:hover:not(.active) { background: var(--surface3); color: var(--text2); }
+
+/* Buttons */
+.btn {
+  padding: 7px 13px; border-radius: var(--radius-xs);
+  border: 1px solid var(--border2); cursor: pointer;
+  font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600;
+  transition: all 0.18s; display: flex; align-items: center; gap: 5px;
+  background: var(--surface); color: var(--text2); white-space: nowrap;
+}
+.btn:hover { background: var(--surface2); color: var(--text); box-shadow: var(--shadow-sm); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(37,99,235,0.25); }
+.btn-primary:hover { background: #1d4ed8; color: #fff; }
+.btn-success { background: var(--accent3-lt); color: var(--accent3); border-color: #bbf7d0; }
+.btn-success:hover { background: #dcfce7; }
+#excelInput { display: none; }
+
+/* Contact menu trigger + full-screen contact page */
+.menu-trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.mobile-menu-btn {
+  display: none; padding: 8px; border: 1px solid var(--border);
+  border-radius: var(--radius-xs); background: var(--surface2);
+  cursor: pointer; color: var(--text2);
+}
+.mobile-actions {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  padding: 22px; z-index: 500;
+  overflow-y: auto;
+}
+.mobile-actions.open {
+  display: flex; align-items: center; justify-content: center;
+}
+.contact-sheet {
+  width: min(940px, 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  position: relative;
+}
+.contact-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 42px; height: 42px; border: 1px solid var(--border);
+  border-radius: 999px; background: var(--surface);
+  cursor: pointer; font-size: 20px; color: var(--text2);
+}
+body[dir="rtl"] .contact-close {
+  right: auto; left: 14px;
+}
+.contact-header {
+  padding-right: 48px;
+  margin-bottom: 18px;
+}
+body[dir="rtl"] .contact-header {
+  padding-right: 0; padding-left: 48px;
+}
+.contact-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent-lt); color: var(--accent);
+  border: 1px solid #bfdbfe; border-radius: 999px;
+  padding: 7px 12px; font-size: 11px; font-weight: 700;
+  margin-bottom: 12px;
+}
+.contact-title {
+  font-size: 24px; line-height: 1.25; font-weight: 800;
+  color: var(--text); margin-bottom: 8px;
+}
+.contact-subtitle {
+  color: var(--text2); font-size: 14px; line-height: 1.7;
+}
+.contact-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin-top: 20px;
+}
+.contact-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.contact-card h3 {
+  font-size: 18px; margin-bottom: 14px; color: var(--text);
+}
+.contact-card p {
+  font-size: 13px; line-height: 1.75; color: var(--text2);
+  margin-bottom: 12px;
+}
+.contact-link {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; margin-bottom: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 14px; color: var(--text); text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  word-break: break-word;
+}
+.contact-link:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: #93c5fd;
+}
+.contact-link strong {
+  display: block; font-size: 12px; margin-bottom: 3px;
+}
+.contact-link span {
+  display: block; font-size: 12px; color: var(--text2); line-height: 1.55;
+}
+.contact-footer {
+  margin-top: 18px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text3); font-size: 12px; line-height: 1.7;
+}
+@media (max-width: 900px) {
+  .contact-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .mobile-actions { padding: 14px; }
+  .contact-sheet { padding: 20px 16px; border-radius: 18px; }
+  .contact-title { font-size: 20px; }
+  .contact-header { padding-right: 44px; }
+  body[dir="rtl"] .contact-header { padding-left: 44px; }
+}
+
+/* ═══════════════════════════════════════
+   MAIN
+═══════════════════════════════════════ */
+main { padding: 20px 28px; max-width: 1700px; margin: 0 auto; }
+
+/* ═══════════════════════════════════════
+   INFO BAR
+═══════════════════════════════════════ */
+.import-info {
+  background: var(--accent-lt); border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm); padding: 10px 16px;
+  margin-bottom: 18px; display: flex; align-items: center;
+  justify-content: space-between; font-size: 12px;
+  flex-wrap: wrap; gap: 8px; color: var(--text2);
+}
+.import-info-left { display: flex; align-items: center; gap: 8px; }
+.import-info strong { color: var(--accent); }
+.data-badge {
+  background: var(--accent); color: #fff;
+  padding: 3px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ═══════════════════════════════════════
+   FILTERS
+═══════════════════════════════════════ */
+.filters-bar {
+  display: flex; gap: 10px; margin-bottom: 20px;
+  flex-wrap: wrap; align-items: flex-end;
+  background: var(--surface); padding: 14px 18px;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 110px; flex: 1; }
+.filter-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; }
+select {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); color: var(--text);
+  font-family: 'Sora', sans-serif; font-size: 12px;
+  padding: 7px 26px 7px 9px; outline: none; cursor: pointer;
+  transition: border-color 0.18s; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 11 11'%3E%3Cpath fill='%2394a3b8' d='M5.5 7.5L1 3h9z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+body[dir="rtl"] select { padding: 7px 9px 7px 26px; background-position: left 8px center; }
+select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.filter-active select { border-color: var(--accent); }
+.btn-reset {
+  background: #fef2f2; color: var(--danger);
+  border-color: #fecaca; align-self: flex-end;
+  flex-shrink: 0;
+}
+.btn-reset:hover { background: #fee2e2; }
+#filter-count { font-size: 11px; color: var(--text3); align-self: flex-end; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+
+/* ═══════════════════════════════════════
+   KPI GRID
+═══════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 14px;
+}
+.kpi-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 20px;
+}
+/* Smaller secondary KPI cards */
+.kpi-card.sm { padding: 14px 18px; }
+.kpi-card.sm .kpi-value { font-size: 24px; margin-bottom: 6px; }
+.kpi-card.sm .kpi-icon  { width: 28px; height: 28px; font-size: 12px; }
+.kpi-card.sm .kpi-title { font-size: 10px; }
+.kpi-card.sm .kpi-sub   { font-size: 10px; min-height: 18px; }
+/* Section header */
+.section-sep {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px; margin-top: 4px;
+}
+.section-sep-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text3); white-space: nowrap;
+}
+.section-sep-line { flex: 1; height: 1px; background: var(--border); }
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.kpi-card::after {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 100px; height: 100px; border-radius: 50%; opacity: 0.07;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+.kpi-card.blue::before  { background: linear-gradient(90deg,#2563eb,#0891b2); }
+.kpi-card.blue::after   { background: var(--accent); }
+.kpi-card.orange::before { background: linear-gradient(90deg,#ea580c,#d97706); }
+.kpi-card.orange::after  { background: var(--accent2); }
+.kpi-card.green::before  { background: linear-gradient(90deg,#16a34a,#0891b2); }
+.kpi-card.green::after   { background: var(--accent3); }
+.kpi-card.purple::before { background: linear-gradient(90deg,#7c3aed,#2563eb); }
+.kpi-card.purple::after  { background: var(--purple); }
+.kpi-card.cyan::before   { background: linear-gradient(90deg,#0891b2,#0d9488); }
+.kpi-card.cyan::after    { background: var(--cyan); }
+.kpi-card.cyan { box-shadow: 0 0 0 1px #cffafe inset; }
+.kpi-card.teal::before   { background: linear-gradient(90deg,#0d9488,#16a34a); }
+.kpi-card.teal::after    { background: var(--teal); }
+.kpi-card.rose::before   { background: linear-gradient(90deg,#e11d48,#ea580c); }
+.kpi-card.rose::after    { background: var(--rose); }
+.kpi-card.indigo::before { background: linear-gradient(90deg,#4f46e5,#7c3aed); }
+.kpi-card.indigo::after  { background: var(--indigo); }
+.kpi-card.amber::before  { background: linear-gradient(90deg,#d97706,#ea580c); }
+.kpi-card.amber::after   { background: #d97706; }
+.kpi-card.slate::before  { background: linear-gradient(90deg,#334155,#475569); }
+.kpi-card.slate::after   { background: var(--slate); }
+
+.kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.kpi-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+.kpi-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+  background: var(--surface2); border: 1px solid var(--border); flex-shrink: 0;
+}
+.kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px; font-weight: 700; line-height: 1;
+  margin-bottom: 10px; letter-spacing: -1px;
+}
+.kpi-value.blue   { color: var(--accent); }
+.kpi-value.orange { color: var(--accent2); }
+.kpi-value.green  { color: var(--accent3); }
+.kpi-value.purple { color: var(--purple); }
+.kpi-value.cyan   { color: var(--cyan); }
+.kpi-value.teal   { color: var(--teal); }
+.kpi-value.rose   { color: var(--rose); }
+.kpi-value.indigo { color: var(--indigo); }
+.kpi-value.amber  { color: var(--warn); }
+.kpi-value.slate  { color: #334155; }
+.kpi-sub { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 22px; }
+.kpi-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px;
+  font-weight: 700; letter-spacing: 0.2px;
+  font-family: 'JetBrains Mono', monospace; flex-shrink: 0;
+}
+.badge-green  { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-red    { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.badge-orange { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+.badge-blue   { background: var(--accent-lt); color: #1d4ed8; border: 1px solid #bfdbfe; }
+.badge-cyan   { background: #cffafe; color: #0e7490; border: 1px solid #a5f3fc; }
+.badge-teal   { background: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4; }
+.badge-indigo { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+.badge-slate  { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+
+/* ═══════════════════════════════════════
+   TRS ROW
+═══════════════════════════════════════ */
+.trs-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 20px;
+}
+.trs-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+}
+.trs-card:hover { box-shadow: var(--shadow); }
+.trs-gauge { width: 46px; height: 46px; flex-shrink: 0; position: relative; }
+.trs-gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.trs-gauge-bg   { stroke: var(--surface3); fill: none; stroke-width: 3.5; }
+.trs-gauge-fill { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.trs-inner { flex: 1; min-width: 0; }
+.trs-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; }
+.trs-value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; line-height: 1.1; }
+.trs-bar-wrap { height: 4px; background: var(--surface3); border-radius: 2px; margin-top: 7px; }
+.trs-bar { height: 4px; border-radius: 2px; transition: width 1s ease; min-width: 2px; }
+
+/* ═══════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════ */
+.charts-grid   { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+.charts-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.bottom-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.bottom-wide   { margin-bottom: 28px; }
+
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+}
+.chart-card:hover { box-shadow: var(--shadow); }
+.chart-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 8px;
+}
+.chart-title {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.4px; text-transform: uppercase; color: var(--text2);
+}
+.chart-subtitle { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.chart-pill {
+  font-size: 10px; padding: 3px 10px; border-radius: 20px;
+  background: var(--surface2); color: var(--text3);
+  border: 1px solid var(--border); font-weight: 600;
+}
+canvas { max-height: 260px; }
+.canvas-tall { max-height: 300px !important; }
+
+/* ═══════════════════════════════════════
+   CAUSES TABLE
+═══════════════════════════════════════ */
+.cause-table { width: 100%; border-collapse: collapse; }
+.cause-table tr { border-bottom: 1px solid var(--border); }
+.cause-table tr:last-child { border: none; }
+.cause-table td { padding: 10px 0; font-size: 12px; color: var(--text2); }
+.cause-table td:last-child { text-align: right; }
+.cause-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.cause-mini-bar { height: 6px; border-radius: 3px; min-width: 4px; transition: width 0.7s ease; }
+.cause-count { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
+.cause-pct { font-size: 10px; color: var(--text3); }
+
+/* ═══════════════════════════════════════
+   LEGEND
+═══════════════════════════════════════ */
+.legend-pills { display: flex; gap: 10px; flex-wrap: wrap; }
+.legend-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ═══════════════════════════════════════
+   NO DATA
+═══════════════════════════════════════ */
+.no-data {
+  display: flex; align-items: center; justify-content: center;
+  height: 180px; color: var(--text3); font-size: 13px;
+  flex-direction: column; gap: 8px;
+}
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+  display: none; align-items: center; justify-content: center;
+  z-index: 10000; backdrop-filter: blur(4px);
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px; max-width: 420px; width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 { color: var(--text); margin-bottom: 10px; font-size: 17px; }
+.modal p { color: var(--text2); font-size: 13px; margin-bottom: 22px; line-height: 1.6; }
+.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-btn {
+  padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: 'Sora', sans-serif; transition: all 0.18s;
+}
+.modal-btn-primary { background: var(--accent); color: #fff; }
+.modal-btn-primary:hover { background: #1d4ed8; }
+.modal-btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.modal-btn-secondary:hover { background: var(--surface3); }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — TABLET (≤1100px)
+═══════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .kpi-grid     { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid-2   { grid-template-columns: repeat(2, 1fr); }
+  .trs-row      { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid  { grid-template-columns: 1fr; }
+  .charts-grid-3 { grid-template-columns: 1fr 1fr; }
+  .bottom-grid  { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — MOBILE (≤640px)
+═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  header { padding: 0 14px; }
+  main { padding: 14px; }
+
+  /* Hide desktop buttons, show hamburger */
+  .desktop-actions { display: none !important; }
+  .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+
+  .logo-text h1 { font-size: 11px; }
+  .logo-text p  { display: none; }
+
+  .kpi-grid  { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-grid-2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .trs-row   { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .charts-grid-3 { grid-template-columns: 1fr; }
+  .bottom-grid   { grid-template-columns: 1fr; }
+
+  .kpi-card { padding: 14px 15px; }
+  .kpi-value { font-size: 24px; }
+  .kpi-icon  { width: 28px; height: 28px; font-size: 12px; }
+
+  .trs-card { padding: 12px 14px; gap: 10px; }
+  .trs-gauge { width: 38px; height: 38px; }
+  .trs-value { font-size: 18px; }
+
+  .chart-card { padding: 14px; }
+  .chart-title { font-size: 11px; }
+
+  .filters-bar { padding: 12px; gap: 8px; }
+  .filter-group { min-width: calc(50% - 4px); flex: 0 0 calc(50% - 4px); }
+  #filter-count { display: none; }
+
+  .import-info { flex-direction: column; text-align: center; gap: 6px; }
+
+  .lang-btn { padding: 5px 7px; font-size: 9.5px; }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — SMALL MOBILE (≤400px)
+═══════════════════════════════════════ */
+@media (max-width: 400px) {
+  .kpi-grid  { grid-template-columns: 1fr; }
+  .kpi-grid-2 { grid-template-columns: 1fr 1fr; }
+  .trs-row   { grid-template-columns: 1fr; }
+  .kpi-value { font-size: 28px; }
+}
+
+/* ═══════════════════════════════════════
+   PRINT
+═══════════════════════════════════════ */
+@media print {
+  header { position: relative; }
+  .btn, .lang-switcher, .filters-bar, .mobile-menu-btn, .mobile-actions { display: none !important; }
+  .chart-card, .kpi-card, .trs-card { break-inside: avoid; }
+}
+/* Responsive section sep */
+@media (max-width: 640px) {
+  .kpi-grid-2 { margin-bottom: 14px; }
+  .section-sep { margin-top: 8px; margin-bottom: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ TRANSLATIONS ═══ -->
+<script>
+const TRANSLATIONS = {
+  fr: {
+    title: "TABLEAU DE BORD DE PRODUCTION",
+    subtitle: "ANALYTIQUE & PERFORMANCE INDUSTRIELLE",
+    importExcel: "Importer Excel",
+    refresh: "Actualiser",
+    exportPDF: "Export PDF",
+    exportCSV: "Export CSV",
+    dataStored: "Données stockées localement. Les imports successifs <strong>conservent</strong> l'historique.",
+    records: "enregistrements",
+    year:"Année", all:"Toutes", quarter:"Trimestre",
+    q1:"T1", q2:"T2", q3:"T3", q4:"T4",
+    line:"Ligne", product:"Produit", shift:"Shift",
+    reset:"Réinitialiser",
+    kpiProduction:"Production Totale", kpiQuality:"Qualité Moyenne",
+    kpiTRS:"TRS Moyen", kpiCost:"Coût Total Estimé",
+    unitConform:"unités conformes", conformity:"% conformité",
+    oeeRate:"taux de rendement synthétique", costBasis:"heures × coût/h",
+    availability:"Disponibilité", performance:"Performance",
+    quality:"Qualité", oeeGlobal:"TRS Global",
+    prodTRS:"Production & TRS par Période",
+    prodTRSsub:"Évolution mensuelle des quantités conformes et du TRS",
+    byProduct:"Répartition par Produit", byProductSub:"% de la production totale",
+    qualDispo:"Qualité & Disponibilité", qualDispoSub:"Comparaison par ligne",
+    rootCauses:"Causes Racines", rootCausesSub:"Distribution des pannes / pertes",
+    prodByLine:"Production par Ligne", prodByLineSub:"Total des unités conformes",
+    timeAnalysis:"Analyse des Temps", timeAnalysisSub:"Fonctionnement vs Perdu par mois",
+    trsByProduct:"TRS par Produit", trsByProductSub:"Rendement synthétique moyen",
+    planVsDefect:"% Réalisation du Plan vs % Défauts",
+    planVsDefectSub:"Analyse de corrélation par session de production",
+    scatter:"Nuage de Points",
+    loading:"CHARGEMENT DES DONNÉES...",
+    importTitle:"Importer des données Excel",
+    importQuestion:"Choisissez comment traiter les nouvelles données :",
+    cancel:"Annuler", addToExisting:"Ajouter aux données existantes",
+    replaceAll:"Remplacer toutes les données",
+    operating:"Fonctionnement (H)", lost:"Perdu (H)",
+    badgeExcellent:"▲ Excellent", badgeGood:"▲ Bon",
+    badgeAverage:"◆ Moyen", badgeLow:"▼ Bas", badgeImprove:"▼ À améliorer",
+    sessions:"sessions", lines:"lignes",
+    filterCount:(n,total)=>`${n} / ${total} enregistrements`,
+    oeeLabel:"TRS %", menu:"Menu",
+    kpiUPH:"Cadence UPH", kpiQteCible:"Quantité Cible",
+    kpiPctDefauts:"Taux de Défauts", kpiPctPlan:"Réalisation du Plan",
+    kpiMTBF:"MTBF Moyen", kpiMTTR:"MTTR Moyen",
+    kpiQteNC:"Quantité Non Conforme", kpiPannes:"Pannes Totales",
+    uphSub:"unités / heure", qteCibleSub:"unités planifiées",
+    pctDefautsSub:"% pièces non conformes", pctPlanSub:"% plan atteint",
+    mtbfSub:"heures entre pannes", mttrSub:"heures de réparation",
+    qteNCSub:"pièces rejetées", pannesSub:"arrêts comptabilisés",
+    sectionMain:"KPI Principaux", sectionCalc:"Indicateurs Calculés",
+  },
+  en: {
+    title: "PRODUCTION MANAGEMENT DASHBOARD",
+    subtitle: "ANALYTICS & INDUSTRIAL PERFORMANCE",
+    importExcel:"Import Excel", refresh:"Refresh",
+    exportPDF:"Export PDF", exportCSV:"Export CSV",
+    dataStored:"Data stored locally. Successive imports <strong>preserve</strong> history.",
+    records:"records",
+    year:"Year", all:"All", quarter:"Quarter",
+    q1:"Q1", q2:"Q2", q3:"Q3", q4:"Q4",
+    line:"Line", product:"Product", shift:"Shift",
+    reset:"Reset",
+    kpiProduction:"Total Production", kpiQuality:"Average Quality",
+    kpiTRS:"Average OEE", kpiCost:"Estimated Cost",
+    unitConform:"conforming units", conformity:"% conformity",
+    oeeRate:"overall equipment effectiveness", costBasis:"hours × cost/h",
+    availability:"Availability", performance:"Performance",
+    quality:"Quality", oeeGlobal:"Global OEE",
+    prodTRS:"Production & OEE by Period",
+    prodTRSsub:"Monthly evolution of conforming quantities and OEE",
+    byProduct:"Distribution by Product", byProductSub:"% of total production",
+    qualDispo:"Quality & Availability", qualDispoSub:"Comparison by line",
+    rootCauses:"Root Causes", rootCausesSub:"Distribution of breakdowns / losses",
+    prodByLine:"Production by Line", prodByLineSub:"Total conforming units",
+    timeAnalysis:"Time Analysis", timeAnalysisSub:"Operating vs Lost per month",
+    trsByProduct:"OEE by Product", trsByProductSub:"Average synthetic efficiency",
+    planVsDefect:"Plan Achievement % vs Defect %",
+    planVsDefectSub:"Correlation analysis by production session",
+    scatter:"Scatter Plot",
+    loading:"LOADING DATA...",
+    importTitle:"Import Excel Data",
+    importQuestion:"Choose how to handle the new data:",
+    cancel:"Cancel", addToExisting:"Add to existing data",
+    replaceAll:"Replace all data",
+    operating:"Operating (H)", lost:"Lost (H)",
+    badgeExcellent:"▲ Excellent", badgeGood:"▲ Good",
+    badgeAverage:"◆ Average", badgeLow:"▼ Low", badgeImprove:"▼ To improve",
+    sessions:"sessions", lines:"lines",
+    filterCount:(n,total)=>`${n} / ${total} records`,
+    oeeLabel:"OEE %", menu:"Menu",
+    kpiUPH:"UPH Rate", kpiQteCible:"Target Quantity",
+    kpiPctDefauts:"Defect Rate", kpiPctPlan:"Plan Achievement",
+    kpiMTBF:"Avg MTBF", kpiMTTR:"Avg MTTR",
+    kpiQteNC:"Non-Conforming Qty", kpiPannes:"Total Breakdowns",
+    uphSub:"units / hour", qteCibleSub:"planned units",
+    pctDefautsSub:"% non-conforming parts", pctPlanSub:"% plan achieved",
+    mtbfSub:"hours between failures", mttrSub:"repair hours",
+    qteNCSub:"rejected parts", pannesSub:"recorded stops",
+    sectionMain:"Main KPIs", sectionCalc:"Calculated Indicators",
+  },
+  es: {
+    title: "TABLERO DE GESTIÓN DE PRODUCCIÓN",
+    subtitle: "ANALÍTICA Y RENDIMIENTO INDUSTRIAL",
+    importExcel:"Importar Excel", refresh:"Actualizar",
+    exportPDF:"Exportar PDF", exportCSV:"Exportar CSV",
+    dataStored:"Datos almacenados localmente. Las importaciones sucesivas <strong>conservan</strong> el historial.",
+    records:"registros",
+    year:"Año", all:"Todos", quarter:"Trimestre",
+    q1:"T1", q2:"T2", q3:"T3", q4:"T4",
+    line:"Línea", product:"Producto", shift:"Turno",
+    reset:"Reiniciar",
+    kpiProduction:"Producción Total", kpiQuality:"Calidad Media",
+    kpiTRS:"OEE Medio", kpiCost:"Costo Estimado",
+    unitConform:"unidades conformes", conformity:"% conformidad",
+    oeeRate:"eficiencia general del equipo", costBasis:"horas × costo/h",
+    availability:"Disponibilidad", performance:"Rendimiento",
+    quality:"Calidad", oeeGlobal:"OEE Global",
+    prodTRS:"Producción & OEE por Período",
+    prodTRSsub:"Evolución mensual de cantidades conformes y OEE",
+    byProduct:"Distribución por Producto", byProductSub:"% de la producción total",
+    qualDispo:"Calidad & Disponibilidad", qualDispoSub:"Comparación por línea",
+    rootCauses:"Causas Raíz", rootCausesSub:"Distribución de averías / pérdidas",
+    prodByLine:"Producción por Línea", prodByLineSub:"Total de unidades conformes",
+    timeAnalysis:"Análisis de Tiempos", timeAnalysisSub:"Funcionamiento vs Perdido por mes",
+    trsByProduct:"OEE por Producto", trsByProductSub:"Eficiencia sintética media",
+    planVsDefect:"% Cumplimiento del Plan vs % Defectos",
+    planVsDefectSub:"Análisis de correlación por sesión de producción",
+    scatter:"Diagrama de Dispersión",
+    loading:"CARGANDO DATOS...",
+    importTitle:"Importar Datos Excel",
+    importQuestion:"Elija cómo tratar los nuevos datos:",
+    cancel:"Cancelar", addToExisting:"Agregar a datos existentes",
+    replaceAll:"Reemplazar todos los datos",
+    operating:"Funcionamiento (H)", lost:"Perdido (H)",
+    badgeExcellent:"▲ Excelente", badgeGood:"▲ Bueno",
+    badgeAverage:"◆ Medio", badgeLow:"▼ Bajo", badgeImprove:"▼ A mejorar",
+    sessions:"sesiones", lines:"líneas",
+    filterCount:(n,total)=>`${n} / ${total} registros`,
+    oeeLabel:"OEE %", menu:"Menú",
+    kpiUPH:"Cadencia UPH", kpiQteCible:"Cantidad Objetivo",
+    kpiPctDefauts:"Tasa de Defectos", kpiPctPlan:"Cumplimiento del Plan",
+    kpiMTBF:"MTBF Promedio", kpiMTTR:"MTTR Promedio",
+    kpiQteNC:"Cantidad No Conforme", kpiPannes:"Averías Totales",
+    uphSub:"unidades / hora", qteCibleSub:"unidades planificadas",
+    pctDefautsSub:"% piezas no conformes", pctPlanSub:"% plan alcanzado",
+    mtbfSub:"horas entre fallos", mttrSub:"horas de reparación",
+    qteNCSub:"piezas rechazadas", pannesSub:"paradas registradas",
+    sectionMain:"KPI Principales", sectionCalc:"Indicadores Calculados",
+  },
+  ar: {
+    title: "لوحة إدارة الإنتاج",
+    subtitle: "التحليلات والأداء الصناعي",
+    importExcel:"استيراد Excel", refresh:"تحديث",
+    exportPDF:"تصدير PDF", exportCSV:"تصدير CSV",
+    dataStored:"البيانات مخزنة محلياً. الاستيرادات المتتالية <strong>تحتفظ</strong> بالتاريخ.",
+    records:"سجل",
+    year:"السنة", all:"الكل", quarter:"الربع",
+    q1:"ر1", q2:"ر2", q3:"ر3", q4:"ر4",
+    line:"خط", product:"منتج", shift:"وردية",
+    reset:"إعادة ضبط",
+    kpiProduction:"الإنتاج الكلي", kpiQuality:"متوسط الجودة",
+    kpiTRS:"متوسط OEE", kpiCost:"التكلفة التقديرية",
+    unitConform:"وحدة مطابقة", conformity:"% المطابقة",
+    oeeRate:"الكفاءة الشاملة للمعدات", costBasis:"ساعات × التكلفة/س",
+    availability:"التوافر", performance:"الأداء",
+    quality:"الجودة", oeeGlobal:"OEE الإجمالي",
+    prodTRS:"الإنتاج & OEE حسب الفترة",
+    prodTRSsub:"التطور الشهري للكميات المطابقة و OEE",
+    byProduct:"التوزيع حسب المنتج", byProductSub:"% من إجمالي الإنتاج",
+    qualDispo:"الجودة والتوافر", qualDispoSub:"مقارنة حسب الخط",
+    rootCauses:"الأسباب الجذرية", rootCausesSub:"توزيع الأعطال / الخسائر",
+    prodByLine:"الإنتاج حسب الخط", prodByLineSub:"إجمالي الوحدات المطابقة",
+    timeAnalysis:"تحليل الوقت", timeAnalysisSub:"التشغيل مقابل المفقود شهرياً",
+    trsByProduct:"OEE حسب المنتج", trsByProductSub:"متوسط الكفاءة الاصطناعية",
+    planVsDefect:"% تحقيق الخطة مقابل % العيوب",
+    planVsDefectSub:"تحليل الارتباط حسب جلسة الإنتاج",
+    scatter:"مخطط الانتشار",
+    loading:"جارٍ تحميل البيانات...",
+    importTitle:"استيراد بيانات Excel",
+    importQuestion:"اختر كيفية معالجة البيانات الجديدة:",
+    cancel:"إلغاء", addToExisting:"إضافة إلى البيانات الموجودة",
+    replaceAll:"استبدال جميع البيانات",
+    operating:"التشغيل (س)", lost:"المفقود (س)",
+    badgeExcellent:"▲ ممتاز", badgeGood:"▲ جيد",
+    badgeAverage:"◆ متوسط", badgeLow:"▼ منخفض", badgeImprove:"▼ يحتاج تحسين",
+    sessions:"جلسات", lines:"خطوط",
+    filterCount:(n,total)=>`${n} / ${total} سجل`,
+    oeeLabel:"OEE %", menu:"القائمة",
+    kpiUPH:"معدل UPH", kpiQteCible:"الكمية المستهدفة",
+    kpiPctDefauts:"معدل العيوب", kpiPctPlan:"تحقيق الخطة",
+    kpiMTBF:"متوسط MTBF", kpiMTTR:"متوسط MTTR",
+    kpiQteNC:"الكمية غير المطابقة", kpiPannes:"إجمالي الأعطال",
+    uphSub:"وحدة / ساعة", qteCibleSub:"وحدات مخططة",
+    pctDefautsSub:"% قطع غير مطابقة", pctPlanSub:"% تحقيق الخطة",
+    mtbfSub:"ساعات بين الأعطال", mttrSub:"ساعات الإصلاح",
+    qteNCSub:"قطع مرفوضة", pannesSub:"توقفات مسجلة",
+    sectionMain:"مؤشرات KPI الرئيسية", sectionCalc:"المؤشرات المحسوبة",
+  }
+};
+
+const MONTHS_LOCALE = {
+  fr: ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  es: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+  ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
+};
+
+let currentLang = 'fr';
+
+function t(key) { return TRANSLATIONS[currentLang][key] ?? TRANSLATIONS['fr'][key] ?? key; }
+function months() { return MONTHS_LOCALE[currentLang]; }
+
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  applyTranslations();
+  if (RAW_DATA.length > 0) updateAll();
+}
+
+function applyTranslations() {
+  const s = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+  const h = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
+  const q = (sel, txt) => { const el = document.querySelector(sel); if(el) el.textContent = txt; };
+  const qi = (sel, html) => { const el = document.querySelector(sel); if(el) el.innerHTML = html; };
+
+  q('.logo-text h1', t('title'));
+  q('.logo-text p', t('subtitle'));
+  qi('.btn-import', '⬇ ' + t('importExcel'));
+  qi('.btn-refresh', '↻ ' + t('refresh'));
+  qi('.btn-pdf', '⎙ ' + t('exportPDF'));
+  qi('.btn-csv', '⤓ ' + t('exportCSV'));
+  // mobile menu buttons
+  document.querySelectorAll('.m-import').forEach(el => el.innerHTML = '⬇ ' + t('importExcel'));
+  document.querySelectorAll('.m-refresh').forEach(el => el.innerHTML = '↻ ' + t('refresh'));
+  document.querySelectorAll('.m-pdf').forEach(el => el.innerHTML = '⎙ ' + t('exportPDF'));
+  document.querySelectorAll('.m-csv').forEach(el => el.innerHTML = '⤓ ' + t('exportCSV'));
+
+  h('import-info-text', t('dataStored'));
+  updateRecordCount();
+
+  s('fl-year', t('year')); s('fl-quarter', t('quarter'));
+  s('fl-line', t('line')); s('fl-product', t('product')); s('fl-shift', t('shift'));
+  document.querySelectorAll('.opt-all').forEach(o => o.textContent = t('all'));
+  ['q1','q2','q3','q4'].forEach(q => { const el = document.getElementById('opt-'+q); if(el) el.textContent = t(q); });
+  q('.btn-reset', '✕ ' + t('reset'));
+
+  s('kpi-title-prod', t('kpiProduction')); s('kpi-title-qual', t('kpiQuality'));
+  s('kpi-title-trs', t('kpiTRS')); s('kpi-title-cost', t('kpiCost'));
+  s('kpi-sub-prod-text', t('unitConform')); s('kpi-sub-qual-text', t('conformity'));
+  s('kpi-sub-trs-text', t('oeeRate')); s('kpi-sub-cost-text', t('costBasis'));
+  // Secondary KPI titles
+  s('kpi-title-uph', t('kpiUPH')); s('kpi-title-cible', t('kpiQteCible'));
+  s('kpi-title-defauts', t('kpiPctDefauts')); s('kpi-title-plan', t('kpiPctPlan'));
+  s('kpi-title-mtbf', t('kpiMTBF')); s('kpi-title-mttr', t('kpiMTTR'));
+  s('kpi-title-qte-nc', t('kpiQteNC')); s('kpi-title-pannes', t('kpiPannes'));
+  s('kpi-sub-uph-text', t('uphSub')); s('kpi-sub-cible-text', t('qteCibleSub'));
+  s('kpi-sub-defauts-text', t('pctDefautsSub')); s('kpi-sub-plan-text', t('pctPlanSub'));
+  s('kpi-sub-mtbf-text', t('mtbfSub')); s('kpi-sub-mttr-text', t('mttrSub'));
+  s('kpi-sub-qte-nc-text', t('qteNCSub')); s('kpi-sub-pannes-text', t('pannesSub'));
+  s('sep-main-label', t('sectionMain')); s('sep-calc-label', t('sectionCalc'));
+
+  s('trs-label-dispo', t('availability')); s('trs-label-perf', t('performance'));
+  s('trs-label-qual', t('quality')); s('trs-label-global', t('oeeGlobal'));
+
+  s('ct-timeline', t('prodTRS')); s('cs-timeline', t('prodTRSsub'));
+  s('ct-donut', t('byProduct')); s('cs-donut', t('byProductSub'));
+  s('ct-qualdispo', t('qualDispo')); s('cs-qualdispo', t('qualDispoSub'));
+  s('ct-causes', t('rootCauses')); s('cs-causes', t('rootCausesSub'));
+  s('ct-lignebar', t('prodByLine')); s('cs-lignebar', t('prodByLineSub'));
+  s('ct-temps', t('timeAnalysis')); s('cs-temps', t('timeAnalysisSub'));
+  s('ct-trsprod', t('trsByProduct')); s('cs-trsprod', t('trsByProductSub'));
+  s('ct-scatter', t('planVsDefect')); s('cs-scatter', t('planVsDefectSub'));
+  s('pill-scatter', t('scatter'));
+  s('leg-prod', t('kpiProduction').split(' ')[0]);
+  s('leg-trs', t('oeeLabel'));
+  s('leg-fonct', t('operating')); s('leg-lost', t('lost'));
+
+  q('.loader-text', t('loading'));
+  q('.modal-title', t('importTitle')); q('.modal-desc', t('importQuestion'));
+  q('.modal-cancel', t('cancel'));
+  qi('.modal-add', '+ ' + t('addToExisting'));
+  qi('.modal-replace', '↻ ' + t('replaceAll'));
+  document.querySelectorAll('.menu-trigger').forEach(el => el.textContent = '☰ ' + t('menu'));
+}
+</script>
+
+<!-- ═══ LOADER ═══ -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text">CHARGEMENT DES DONNÉES...</div>
+</div>
+
+<!-- ═══ MODAL ═══ -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3 class="modal-title">Importer des données Excel</h3>
+    <p class="modal-desc">Choisissez comment traiter les nouvelles données :</p>
+    <div class="modal-buttons">
+      <button class="modal-btn modal-btn-secondary modal-cancel" onclick="closeImportModal()">Annuler</button>
+      <button class="modal-btn modal-btn-primary modal-add" onclick="importExcel('merge')">+ Ajouter</button>
+      <button class="modal-btn modal-btn-primary modal-replace" onclick="importExcel('replace')">↻ Remplacer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="logo-area">
+    <div class="logo-icon">⚙</div>
+    <div class="logo-text">
+      <h1>TABLEAU DE BORD DE PRODUCTION</h1>
+      <p>ANALYTIQUE & PERFORMANCE INDUSTRIELLE</p>
+    </div>
+  </div>
+
+  <!-- Desktop actions -->
+  <div class="header-right desktop-actions" style="display:flex;">
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">FR</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="es" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" data-lang="ar" onclick="setLang('ar')">AR</button>
+    </div>
+    <button class="btn menu-trigger" onclick="toggleMobileMenu()">☰ Menu</button>
+  </div>
+
+  <!-- Mobile: lang + hamburger -->
+  <div class="header-right" style="display:none;" id="mobile-top-right">
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">FR</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="es" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" data-lang="ar" onclick="setLang('ar')">AR</button>
+    </div>
+    <button class="mobile-menu-btn btn menu-trigger" onclick="toggleMobileMenu()">☰ Menu</button>
+  </div>
+
+  <input type="file" id="excelInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)">
+</header>
+
+<!-- Contact page opened from Menu -->
+<div class="mobile-actions" id="mobileActions" onclick="closeMobileMenu()">
+  <div class="contact-sheet" onclick="event.stopPropagation()">
+    <button class="contact-close" type="button" aria-label="Close" onclick="closeMobileMenu()">×</button>
+    <div class="contact-header">
+      <div class="contact-eyebrow">📦 Version complète · Contact direct</div>
+      <div class="contact-title">Version complète disponible</div>
+      <div class="contact-subtitle">Cliquez sur les liens ci-dessous pour nous contacter rapidement, suivre nos projets professionnels, ou télécharger la version complète avec toutes les mises à jour et fonctionnalités avancées.</div>
+    </div>
+
+    <div class="contact-grid">
+      <section class="contact-card" lang="fr">
+        <h3>🇫🇷 Français</h3>
+        <p>📦 Pour obtenir la version complète et nous contacter :</p>
+        <a class="contact-link" href="https://wa.me/c/212618477165" target="_blank" rel="noopener noreferrer">
+          <div>📱</div>
+          <div><strong>WhatsApp</strong><span>Contactez-nous directement pour un support rapide et pour demander la version complète.</span></div>
+        </a>
+        <a class="contact-link" href="https://www.linkedin.com/in/med-ouchen" target="_blank" rel="noopener noreferrer">
+          <div>💼</div>
+          <div><strong>LinkedIn</strong><span>Suivez-nous pour découvrir les derniers projets et solutions professionnelles en gestion de données et Excel.</span></div>
+        </a>
+        <a class="contact-link" href="https://mohamadouchen.gumroad.com" target="_blank" rel="noopener noreferrer">
+          <div>🛒</div>
+          <div><strong>Gumroad</strong><span>Téléchargez facilement la version complète avec toutes les mises à jour et fonctionnalités avancées.</span></div>
+        </a>
+      </section>
+
+      <section class="contact-card" lang="ar" dir="rtl">
+        <h3>🇸🇦 العربية</h3>
+        <p>📦 للحصول على النسخة الكاملة والتواصل معنا:</p>
+        <a class="contact-link" href="https://wa.me/c/212618477165" target="_blank" rel="noopener noreferrer">
+          <div>📱</div>
+          <div><strong>واتساب</strong><span>تواصل معنا مباشرة للحصول على دعم سريع وطلب النسخة الكاملة.</span></div>
+        </a>
+        <a class="contact-link" href="https://www.linkedin.com/in/med-ouchen" target="_blank" rel="noopener noreferrer">
+          <div>💼</div>
+          <div><strong>لينكدإن</strong><span>تابعنا للاطلاع على أحدث المشاريع والحلول الاحترافية في مجال إدارة البيانات وExcel.</span></div>
+        </a>
+        <a class="contact-link" href="https://mohamadouchen.gumroad.com" target="_blank" rel="noopener noreferrer">
+          <div>🛒</div>
+          <div><strong>Gumroad</strong><span>قم بتحميل النسخة الكاملة بسهولة مع جميع التحديثات والميزات المتقدمة.</span></div>
+        </a>
+      </section>
+
+      <section class="contact-card" lang="en">
+        <h3>🇬🇧 English</h3>
+        <p>📦 To get the full version and contact us:</p>
+        <a class="contact-link" href="https://wa.me/c/212618477165" target="_blank" rel="noopener noreferrer">
+          <div>📱</div>
+          <div><strong>WhatsApp</strong><span>Contact us directly for fast support and to request the full version.</span></div>
+        </a>
+        <a class="contact-link" href="https://www.linkedin.com/in/med-ouchen" target="_blank" rel="noopener noreferrer">
+          <div>💼</div>
+          <div><strong>LinkedIn</strong><span>Follow us to discover the latest projects and professional solutions in data management and Excel.</span></div>
+        </a>
+        <a class="contact-link" href="https://mohamadouchen.gumroad.com" target="_blank" rel="noopener noreferrer">
+          <div>🛒</div>
+          <div><strong>Gumroad</strong><span>Easily download the full version with all updates and advanced features.</span></div>
+        </a>
+      </section>
+    </div>
+
+    <div class="contact-footer">Tous les boutons du menu ouvrent maintenant cette page de contact, et les liens sont activés pour fonctionner correctement.</div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+  <div class="import-info">
+    <div class="import-info-left">
+      <span>💾</span>
+      <span id="import-info-text">Données stockées localement. Les imports successifs <strong>conservent</strong> l'historique.</span>
+    </div>
+    <div><span class="data-badge" id="records-count">0 enregistrements</span></div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="filter-group" id="fg-year">
+      <span class="filter-label" id="fl-year">Année</span>
+      <select id="f-year" onchange="applyFilters()">
+        <option value="all" class="opt-all">Toutes</option>
+      </select>
+    </div>
+    <div class="filter-group" id="fg-quarter">
+      <span class="filter-label" id="fl-quarter">Trimestre</span>
+      <select id="f-quarter" onchange="applyFilters()">
+        <option value="all" class="opt-all">Toutes</option>
+        <option value="1" id="opt-q1">T1</option>
+        <option value="2" id="opt-q2">T2</option>
+        <option value="3" id="opt-q3">T3</option>
+        <option value="4" id="opt-q4">T4</option>
+      </select>
+    </div>
+    <div class="filter-group" id="fg-ligne">
+      <span class="filter-label" id="fl-line">Ligne</span>
+      <select id="f-ligne" onchange="applyFilters()">
+        <option value="all" class="opt-all">Toutes</option>
+      </select>
+    </div>
+    <div class="filter-group" id="fg-produit">
+      <span class="filter-label" id="fl-product">Produit</span>
+      <select id="f-produit" onchange="applyFilters()">
+        <option value="all" class="opt-all">Tous</option>
+      </select>
+    </div>
+    <div class="filter-group" id="fg-shift">
+      <span class="filter-label" id="fl-shift">Shift</span>
+      <select id="f-shift" onchange="applyFilters()">
+        <option value="all" class="opt-all">Toutes</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+    </div>
+    <button class="btn btn-reset" onclick="resetFilters()">✕ Réinitialiser</button>
+    <span id="filter-count"></span>
+  </div>
+
+  <!-- KPI SECTION SEPARATOR — MAIN -->
+  <div class="section-sep">
+    <span class="section-sep-label" id="sep-main-label">KPI Principaux</span>
+    <div class="section-sep-line"></div>
+  </div>
+
+  <!-- KPI CARDS — ROW 1 (existing 4) -->
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-prod">Production Totale</div>
+        <div class="kpi-icon">📦</div>
+      </div>
+      <div class="kpi-value blue" id="kpi-prod">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-prod-text">unités conformes</span>&nbsp;<span class="kpi-badge badge-blue" id="kpi-prod-badge"></span></div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-qual">Qualité Moyenne</div>
+        <div class="kpi-icon">✅</div>
+      </div>
+      <div class="kpi-value orange" id="kpi-qual">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-qual-text">% conformité</span>&nbsp;<span class="kpi-badge" id="kpi-qual-badge"></span></div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-trs">TRS Moyen</div>
+        <div class="kpi-icon">📈</div>
+      </div>
+      <div class="kpi-value green" id="kpi-trs">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-trs-text">taux de rendement synthétique</span>&nbsp;<span class="kpi-badge" id="kpi-trs-badge"></span></div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-cost">Coût Total Estimé</div>
+        <div class="kpi-icon">💰</div>
+      </div>
+      <div class="kpi-value purple" id="kpi-cost">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-cost-text">heures × coût/h</span>&nbsp;<span class="kpi-badge badge-blue" id="kpi-cost-badge"></span></div>
+    </div>
+  </div>
+
+  <!-- KPI SECTION SEPARATOR — CALCULATED -->
+  <div class="section-sep">
+    <span class="section-sep-label" id="sep-calc-label">Indicateurs Calculés</span>
+    <div class="section-sep-line"></div>
+  </div>
+
+  <!-- KPI CARDS — ROW 2 (8 calculated indicators) -->
+  <div class="kpi-grid-2">
+    <!-- UPH -->
+    <div class="kpi-card sm cyan">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-uph">Cadence UPH</div>
+        <div class="kpi-icon">⚡</div>
+      </div>
+      <div class="kpi-value cyan" id="kpi-uph">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-uph-text">unités / heure</span>&nbsp;<span class="kpi-badge badge-blue" id="kpi-uph-badge"></span></div>
+    </div>
+    <!-- Qté Cible -->
+    <div class="kpi-card sm teal">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-cible">Quantité Cible</div>
+        <div class="kpi-icon">🎯</div>
+      </div>
+      <div class="kpi-value teal" id="kpi-cible">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-cible-text">unités planifiées</span>&nbsp;<span class="kpi-badge badge-blue" id="kpi-cible-badge"></span></div>
+    </div>
+    <!-- % Défauts -->
+    <div class="kpi-card sm rose">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-defauts">Taux de Défauts</div>
+        <div class="kpi-icon">⚠️</div>
+      </div>
+      <div class="kpi-value rose" id="kpi-defauts">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-defauts-text">% pièces non conformes</span>&nbsp;<span class="kpi-badge" id="kpi-defauts-badge"></span></div>
+    </div>
+    <!-- % Plan -->
+    <div class="kpi-card sm indigo">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-plan">Réalisation du Plan</div>
+        <div class="kpi-icon">📋</div>
+      </div>
+      <div class="kpi-value indigo" id="kpi-plan">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-plan-text">% plan atteint</span>&nbsp;<span class="kpi-badge" id="kpi-plan-badge"></span></div>
+    </div>
+    <!-- MTBF -->
+    <div class="kpi-card sm amber">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-mtbf">MTBF Moyen</div>
+        <div class="kpi-icon">🔧</div>
+      </div>
+      <div class="kpi-value amber" id="kpi-mtbf">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-mtbf-text">heures entre pannes</span>&nbsp;<span class="kpi-badge badge-orange" id="kpi-mtbf-badge"></span></div>
+    </div>
+    <!-- MTTR -->
+    <div class="kpi-card sm rose">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-mttr">MTTR Moyen</div>
+        <div class="kpi-icon">🛠️</div>
+      </div>
+      <div class="kpi-value rose" id="kpi-mttr">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-mttr-text">heures de réparation</span>&nbsp;<span class="kpi-badge badge-red" id="kpi-mttr-badge"></span></div>
+    </div>
+    <!-- Qté NC -->
+    <div class="kpi-card sm orange">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-qte-nc">Quantité Non Conforme</div>
+        <div class="kpi-icon">❌</div>
+      </div>
+      <div class="kpi-value orange" id="kpi-qte-nc">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-qte-nc-text">pièces rejetées</span>&nbsp;<span class="kpi-badge badge-red" id="kpi-qte-nc-badge"></span></div>
+    </div>
+    <!-- Pannes -->
+    <div class="kpi-card sm slate">
+      <div class="kpi-top">
+        <div class="kpi-title" id="kpi-title-pannes">Pannes Totales</div>
+        <div class="kpi-icon">🔴</div>
+      </div>
+      <div class="kpi-value slate" id="kpi-pannes">—</div>
+      <div class="kpi-sub"><span id="kpi-sub-pannes-text">arrêts comptabilisés</span>&nbsp;<span class="kpi-badge badge-red" id="kpi-pannes-badge"></span></div>
+    </div>
+  </div>
+
+  <!-- TRS ROW -->
+  <div class="trs-row">
+    <div class="trs-card">
+      <div class="trs-gauge">
+        <svg viewBox="0 0 46 46"><circle class="trs-gauge-bg" cx="23" cy="23" r="19"/><circle class="trs-gauge-fill" cx="23" cy="23" r="19" id="g-dispo" stroke="#2563eb" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      </div>
+      <div class="trs-inner">
+        <div class="trs-label" id="trs-label-dispo">Disponibilité</div>
+        <div class="trs-value" style="color:var(--accent)" id="trs-dispo">—</div>
+        <div class="trs-bar-wrap"><div class="trs-bar" style="background:var(--accent)" id="bar-dispo"></div></div>
+      </div>
+    </div>
+    <div class="trs-card">
+      <div class="trs-gauge">
+        <svg viewBox="0 0 46 46"><circle class="trs-gauge-bg" cx="23" cy="23" r="19"/><circle class="trs-gauge-fill" cx="23" cy="23" r="19" id="g-perf" stroke="#ea580c" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      </div>
+      <div class="trs-inner">
+        <div class="trs-label" id="trs-label-perf">Performance</div>
+        <div class="trs-value" style="color:var(--accent2)" id="trs-perf">—</div>
+        <div class="trs-bar-wrap"><div class="trs-bar" style="background:var(--accent2)" id="bar-perf"></div></div>
+      </div>
+    </div>
+    <div class="trs-card">
+      <div class="trs-gauge">
+        <svg viewBox="0 0 46 46"><circle class="trs-gauge-bg" cx="23" cy="23" r="19"/><circle class="trs-gauge-fill" cx="23" cy="23" r="19" id="g-qual" stroke="#16a34a" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      </div>
+      <div class="trs-inner">
+        <div class="trs-label" id="trs-label-qual">Qualité</div>
+        <div class="trs-value" style="color:var(--accent3)" id="trs-qual">—</div>
+        <div class="trs-bar-wrap"><div class="trs-bar" style="background:var(--accent3)" id="bar-qual"></div></div>
+      </div>
+    </div>
+    <div class="trs-card">
+      <div class="trs-gauge">
+        <svg viewBox="0 0 46 46"><circle class="trs-gauge-bg" cx="23" cy="23" r="19"/><circle class="trs-gauge-fill" cx="23" cy="23" r="19" id="g-trs" stroke="#7c3aed" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      </div>
+      <div class="trs-inner">
+        <div class="trs-label" id="trs-label-global">TRS Global</div>
+        <div class="trs-value" style="color:var(--purple)" id="trs-global">—</div>
+        <div class="trs-bar-wrap"><div class="trs-bar" style="background:var(--purple)" id="bar-trs"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-timeline">Production & TRS par Période</div>
+          <div class="chart-subtitle" id="cs-timeline">Évolution mensuelle des quantités conformes et du TRS</div>
+        </div>
+        <div class="legend-pills">
+          <div class="legend-pill"><div class="legend-dot" style="background:var(--accent)"></div><span id="leg-prod">Production</span></div>
+          <div class="legend-pill"><div class="legend-dot" style="background:var(--accent2)"></div><span id="leg-trs">TRS %</span></div>
+        </div>
+      </div>
+      <canvas id="chart-timeline" class="canvas-tall"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-donut">Répartition par Produit</div>
+          <div class="chart-subtitle" id="cs-donut">% de la production totale</div>
+        </div>
+      </div>
+      <canvas id="chart-produit-donut"></canvas>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-grid-3">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-qualdispo">Qualité & Disponibilité</div>
+          <div class="chart-subtitle" id="cs-qualdispo">Comparaison par ligne</div>
+        </div>
+      </div>
+      <canvas id="chart-qual-dispo"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-causes">Causes Racines</div>
+          <div class="chart-subtitle" id="cs-causes">Distribution des pannes / pertes</div>
+        </div>
+      </div>
+      <div id="causes-table"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-lignebar">Production par Ligne</div>
+          <div class="chart-subtitle" id="cs-lignebar">Total des unités conformes</div>
+        </div>
+      </div>
+      <canvas id="chart-ligne-bar"></canvas>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 3 -->
+  <div class="bottom-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-temps">Analyse des Temps</div>
+          <div class="chart-subtitle" id="cs-temps">Fonctionnement vs Perdu par mois</div>
+        </div>
+        <div class="legend-pills">
+          <div class="legend-pill"><div class="legend-dot" style="background:var(--accent)"></div><span id="leg-fonct">Fonctionnement (H)</span></div>
+          <div class="legend-pill"><div class="legend-dot" style="background:var(--danger)"></div><span id="leg-lost">Perdu (H)</span></div>
+        </div>
+      </div>
+      <canvas id="chart-temps"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ct-trsprod">TRS par Produit</div>
+          <div class="chart-subtitle" id="cs-trsprod">Rendement synthétique moyen</div>
+        </div>
+      </div>
+      <canvas id="chart-trs-produit"></canvas>
+    </div>
+  </div>
+
+  <!-- SCATTER -->
+  <div class="chart-card bottom-wide">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title" id="ct-scatter">% Réalisation du Plan vs % Défauts</div>
+        <div class="chart-subtitle" id="cs-scatter">Analyse de corrélation par session de production</div>
+      </div>
+      <span class="chart-pill" id="pill-scatter">Nuage de Points</span>
+    </div>
+    <canvas id="chart-scatter" style="max-height:220px"></canvas>
+  </div>
+</main>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+/* ── Menu / contact page ── */
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileActions');
+  const isOpen = menu.classList.toggle('open');
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+function closeMobileMenu() {
+  const menu = document.getElementById('mobileActions');
+  menu.classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeMobileMenu();
+});
+document.addEventListener('click', e => {
+  const menu = document.getElementById('mobileActions');
+  if (menu.classList.contains('open') && !menu.contains(e.target) && !e.target.closest('.menu-trigger')) {
+    closeMobileMenu();
+  }
+});
+
+/* ── Responsive header swap ── */
+function checkViewport() {
+  const isMobile = window.innerWidth <= 640;
+  document.querySelector('.desktop-actions').style.display = isMobile ? 'none' : 'flex';
+  document.getElementById('mobile-top-right').style.display = isMobile ? 'flex' : 'none';
+  // Sync active lang btn on both switchers
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+}
+window.addEventListener('resize', checkViewport);
+
+/* ── Data ── */
+const STORAGE_KEY = 'prod_dashboard_v5';
+// Cost per ligne from Database sheet
+const COST_PER_LIGNE = {"Ligne 1":1000,"Ligne 2":1200,"Ligne 3":900,"Ligne 4":1500,"Ligne 5":1300};
+const PALETTE = ['#2563eb','#ea580c','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#db2777'];
+let RAW_DATA = [], pendingFile = null;
+const charts = {};
+
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(RAW_DATA)); updateRecordCount(); } catch(e){}
+}
+function loadData() {
+  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : null; } catch(e){ return null; }
+}
+function updateRecordCount() {
+  document.getElementById('records-count').textContent = RAW_DATA.length + ' ' + t('records');
+}
+function openImportModal() { document.getElementById('excelInput').click(); }
+function closeImportModal() { document.getElementById('importModal').classList.remove('active'); pendingFile = null; }
+function handleFileSelect(ev) {
+  const f = ev.target.files[0]; if(!f) return;
+  pendingFile = f;
+  if(RAW_DATA.length > 0) document.getElementById('importModal').classList.add('active');
+  else importExcel('replace');
+}
+/* ── Database lookups (mirroring Database sheet) ── */
+const PRODUIT_DB = {
+  'Produit 1':{'cycle_s':40,'mo':4},
+  'Produit 2':{'cycle_s':35,'mo':3},
+  'Produit 3':{'cycle_s':40,'mo':3},
+  'Produit 4':{'cycle_s':37,'mo':3},
+  'Produit 5':{'cycle_s':42,'mo':5},
+  'Produit 6':{'cycle_s':38,'mo':2},
+  'Produit 7':{'cycle_s':42,'mo':3},
+};
+const SHIFT_HOURS = {1:8, 2:8, 3:8};
+const LIGNE_COST  = {'Ligne 1':1000,'Ligne 2':1200,'Ligne 3':900,'Ligne 4':1500,'Ligne 5':1300};
+
+function normalizeRow(row) {
+  /* Support BOTH the exact Excel Raw Data columns AND the older generic format */
+  const pf = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+  const pi = v => { const n = parseInt(v);   return isNaN(n) ? 0 : n; };
+
+  // ── Date ──
+  let rawDate = row['Date'] ?? row['date'] ?? '';
+  let dateObj;
+  if (rawDate instanceof Date) dateObj = rawDate;
+  else if (typeof rawDate === 'number') {
+    // Excel serial date
+    dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+  } else {
+    dateObj = new Date(rawDate);
+  }
+  if (isNaN(dateObj)) return null;
+  const dateStr = dateObj.toISOString().split('T')[0];
+  const yr  = dateObj.getFullYear();
+  const mo  = dateObj.getMonth() + 1;
+  const qtr = Math.ceil(mo / 3);
+
+  // ── Identity fields ──
+  const shift   = pi(row['Shift']   ?? row['shift']   ?? 1);
+  const ligne   = String(row['Ligne']   ?? row['ligne']   ?? row['line']   ?? 'Ligne 1');
+  const produit = String(row['Produit'] ?? row['produit'] ?? row['product'] ?? 'Produit 1');
+
+  // ── Times ──
+  // Excel cols: "Temps de fonctionnement (H)", "Temps d'ouverture (H)", "Arrêt planifié (H)"
+  const temps_fonct  = pf(row["Temps de fonctionnement (H)"] ?? row['temps_fonct'] ?? row['temps_fonctionnement'] ?? 0);
+  const arret_plan   = pf(row["Arrêt planifié (H)"]          ?? row['arret_plan']  ?? row['arret_planifie']      ?? 1);
+  const temps_ouv    = pf(row["Temps d'ouverture (H)"]        ?? row['temps_brute'] ?? row['temps_brut'] ?? SHIFT_HOURS[shift] ?? 8);
+  const temps_brute  = Math.max(0, temps_ouv - arret_plan);
+  const temps_perdu  = Math.max(0, temps_ouv - temps_fonct - arret_plan);
+
+  // ── Quantities ──
+  const qte_conforme = pf(row['Quantité conforme']     ?? row['qte_conforme'] ?? row['quantite_conforme'] ?? 0);
+  const qte_nc       = pf(row['Quantité non conforme'] ?? row['qte_nc']       ?? row['quantite_non_conforme'] ?? 0);
+  const pannes       = pi(row['Pannes']                ?? row['pannes'] ?? 0);
+  const cause        = String(row['Cause racine de défaillance'] ?? row['cause'] ?? row['Cause'] ?? '').trim();
+
+  // ── UPH / Qté cible (computed from Database) ──
+  const db       = PRODUIT_DB[produit] ?? {cycle_s:40, mo:3};
+  const uph      = Math.round(3600 / db.cycle_s * 100) / 100;
+  const upph     = Math.round(uph / db.mo * 100) / 100;
+  const qte_cible = Math.round(uph * temps_brute);
+
+  // ── KPI calculations ──
+  const total_prod   = qte_conforme + qte_nc;
+  const pct_defauts  = total_prod > 0 ? qte_nc / total_prod : 0;
+  const pct_plan     = qte_cible  > 0 ? qte_conforme / qte_cible : 0;
+  const mtbf         = pannes > 0 ? temps_fonct / pannes : 0;
+  const mttr         = pannes > 0 ? temps_perdu / pannes : 0;
+  const dispo        = temps_brute > 0 ? Math.min(temps_fonct / temps_brute, 1) : 0;
+  const perf         = qte_cible  > 0 ? Math.min(total_prod / qte_cible, 1.5) : 0;
+  const qualite      = total_prod > 0 ? Math.min(qte_conforme / total_prod, 1) : 0;
+  const trs          = Math.min(dispo * perf * qualite, 1);
+
+  const r6 = v => Math.round(v * 1e6) / 1e6;
+
+  return {
+    date: dateStr, year: yr, month: mo, quarter: qtr,
+    shift, ligne, produit,
+    temps_fonct: Math.round(temps_fonct*100)/100,
+    temps_brute: Math.round(temps_brute*100)/100,
+    temps_perdu: Math.round(temps_perdu*100)/100,
+    arret_plan:  Math.round(arret_plan*100)/100,
+    qte_cible: qte_cible,
+    qte_conforme: Math.round(qte_conforme),
+    qte_nc: Math.round(qte_nc),
+    cause, pannes,
+    uph, upph,
+    pct_defauts: r6(pct_defauts),
+    pct_plan:    r6(pct_plan),
+    mtbf: r6(mtbf), mttr: r6(mttr),
+    dispo: r6(dispo), perf: r6(perf),
+    qualite: r6(qualite), trs: r6(trs),
+  };
+}
+
+function importExcel(mode) {
+  if(!pendingFile) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+
+      // Auto-detect sheet: prefer "Raw Data", else first sheet
+      const sheetName = wb.SheetNames.find(n => n.toLowerCase().replace(/\s/g,'') === 'rawdata')
+                     ?? wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+
+      // Find the actual header row (skip helper rows at top)
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+      let headerRow = 0;
+      for (let r = range.s.r; r <= Math.min(range.s.r + 5, range.e.r); r++) {
+        const cell = ws[XLSX.utils.encode_cell({r, c: 1})]; // col B
+        if (cell && String(cell.v).trim() === 'Date') { headerRow = r; break; }
+      }
+
+      const jd = XLSX.utils.sheet_to_json(ws, {
+        range: headerRow,
+        defval: null,
+        raw: false,
+        dateNF: 'yyyy-mm-dd',
+      });
+
+      if(!jd.length){ alert('Aucune donnée trouvée'); closeImportModal(); return; }
+
+      const nd = jd
+        .filter(row => row['Date'] || row['date'])
+        .map(normalizeRow)
+        .filter(r => r !== null && r.qte_conforme > 0);
+
+      if(!nd.length){ alert('Aucune ligne valide trouvée'); closeImportModal(); return; }
+
+      if(mode==='merge') {
+        const ek = new Set(RAW_DATA.map(r=>`${r.date}_${r.ligne}_${r.produit}_${r.shift}`));
+        const nr = nd.filter(r=>!ek.has(`${r.date}_${r.ligne}_${r.produit}_${r.shift}`));
+        RAW_DATA = [...RAW_DATA, ...nr];
+      } else { RAW_DATA = nd; }
+
+      saveData(); populateFilters(); resetFilters(); updateAll();
+    } catch(err) { alert('Erreur import: ' + err.message); console.error(err); }
+    closeImportModal();
+    document.getElementById('excelInput').value = '';
+  };
+  reader.readAsArrayBuffer(pendingFile);
+}
+
+/* ── Utilities ── */
+const mean = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+const sum  = arr => arr.reduce((a,b)=>a+b,0);
+const pct  = v => (v*100).toFixed(1)+'%';
+function fmtNum(n) {
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=1000) return (n/1000).toFixed(1)+'K';
+  return Math.round(n).toLocaleString();
+}
+function animCount(el, target, suffix='', decimals=0) {
+  const dur=1100, t0=performance.now();
+  function step(t) {
+    const p=Math.min((t-t0)/dur,1), e=1-Math.pow(1-p,3), v=target*e;
+    el.textContent=(decimals>0?v.toFixed(decimals):Math.round(v).toLocaleString())+suffix;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function setGauge(id, val) {
+  const circ = 119.4; // 2π×19
+  const el = document.getElementById(id);
+  if(el) el.style.strokeDashoffset = circ - circ * Math.min(val, 1);
+}
+
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = '#e2e8f0';
+Chart.defaults.font.family = 'Sora';
+
+const TP = {
+  backgroundColor:'#fff', borderColor:'#e2e8f0', borderWidth:1,
+  titleColor:'#0f172a', bodyColor:'#475569',
+  padding:12, cornerRadius:8, displayColors:true, boxWidth:8, boxHeight:8,
+};
+
+/* ── Filters ── */
+let activeFilters = {year:'all',quarter:'all',ligne:'all',produit:'all',shift:'all'};
+function getFiltered() {
+  return RAW_DATA.filter(r=>{
+    if(activeFilters.year!=='all'&&r.year!==+activeFilters.year) return false;
+    if(activeFilters.quarter!=='all'&&r.quarter!==+activeFilters.quarter) return false;
+    if(activeFilters.ligne!=='all'&&r.ligne!==activeFilters.ligne) return false;
+    if(activeFilters.produit!=='all'&&r.produit!==activeFilters.produit) return false;
+    if(activeFilters.shift!=='all'&&r.shift!==+activeFilters.shift) return false;
+    return true;
+  });
+}
+function applyFilters() {
+  activeFilters.year    = document.getElementById('f-year').value;
+  activeFilters.quarter = document.getElementById('f-quarter').value;
+  activeFilters.ligne   = document.getElementById('f-ligne').value;
+  activeFilters.produit = document.getElementById('f-produit').value;
+  activeFilters.shift   = document.getElementById('f-shift').value;
+  ['year','quarter','ligne','produit','shift'].forEach(k=>
+    document.getElementById('fg-'+k).classList.toggle('filter-active', activeFilters[k]!=='all')
+  );
+  const data = getFiltered();
+  const cnt = document.getElementById('filter-count');
+  cnt.textContent = data.length < RAW_DATA.length ? TRANSLATIONS[currentLang].filterCount(data.length, RAW_DATA.length) : '';
+  updateAll(data);
+}
+function resetFilters() {
+  ['f-year','f-quarter','f-ligne','f-produit','f-shift'].forEach(id=>document.getElementById(id).value='all');
+  applyFilters();
+}
+function populateFilters() {
+  const years=[...new Set(RAW_DATA.map(r=>r.year))].sort((a,b)=>b-a);
+  const lignes=[...new Set(RAW_DATA.map(r=>r.ligne))].sort();
+  const produits=[...new Set(RAW_DATA.map(r=>r.produit))].sort();
+  const all = t('all');
+  const sy=document.getElementById('f-year'), sl=document.getElementById('f-ligne'), sp=document.getElementById('f-produit');
+  const [cy,cl,cp]=[sy.value,sl.value,sp.value];
+  sy.innerHTML=`<option value="all" class="opt-all">${all}</option>`;
+  sl.innerHTML=`<option value="all" class="opt-all">${all}</option>`;
+  sp.innerHTML=`<option value="all" class="opt-all">${all}</option>`;
+  years.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sy.appendChild(o);});
+  lignes.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;sl.appendChild(o);});
+  produits.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;sp.appendChild(o);});
+  if(years.includes(parseInt(cy))) sy.value=cy;
+  if(lignes.includes(cl)) sl.value=cl;
+  if(produits.includes(cp)) sp.value=cp;
+}
+
+/* ── KPI Update ── */
+function setBadge(id, txt, cls) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = txt;
+  el.className = 'kpi-badge ' + cls;
+}
+
+function updateKPIs(data) {
+  /* ── ROW 1: Main KPIs ── */
+  const prod = sum(data.map(r=>r.qte_conforme));
+  const qual = mean(data.map(r=>r.qualite));
+  const trs  = mean(data.map(r=>r.trs));
+  const cost = sum(data.map(r=>(COST_PER_LIGNE[r.ligne]||1000)*r.temps_fonct));
+  animCount(document.getElementById('kpi-prod'), prod, '', 0);
+  animCount(document.getElementById('kpi-qual'), qual*100, '%', 1);
+  animCount(document.getElementById('kpi-trs'),  trs*100,  '%', 1);
+  animCount(document.getElementById('kpi-cost'), cost/1000,'K€',1);
+
+  setBadge('kpi-qual-badge',
+    qual>=0.88?t('badgeGood'):qual>=0.82?t('badgeAverage'):t('badgeLow'),
+    qual>=0.88?'badge-green':qual>=0.82?'badge-orange':'badge-red');
+  setBadge('kpi-trs-badge',
+    trs>=0.65?t('badgeExcellent'):trs>=0.50?t('badgeGood'):t('badgeImprove'),
+    trs>=0.65?'badge-green':trs>=0.50?'badge-orange':'badge-red');
+  document.getElementById('kpi-prod-badge').textContent = data.length+' '+t('sessions');
+  document.getElementById('kpi-cost-badge').textContent = [...new Set(data.map(r=>r.ligne))].length+' '+t('lines');
+
+  /* ── ROW 2: Calculated KPIs ── */
+  // UPH moyen
+  const uph_val  = mean(data.map(r=>r.uph||0));
+  animCount(document.getElementById('kpi-uph'), uph_val, '', 1);
+  setBadge('kpi-uph-badge',
+    uph_val>=100?'▲ High':uph_val>=80?'◆ Mid':'▼ Low',
+    uph_val>=100?'badge-green':uph_val>=80?'badge-orange':'badge-red');
+
+  // Quantité cible totale
+  const cible_val = sum(data.map(r=>r.qte_cible||0));
+  animCount(document.getElementById('kpi-cible'), cible_val, '', 0);
+  const eff = prod / cible_val;
+  setBadge('kpi-cible-badge',
+    (eff*100).toFixed(1)+'% eff.',
+    eff>=0.85?'badge-green':eff>=0.65?'badge-orange':'badge-red');
+
+  // % Défauts moyen
+  const defauts_val = mean(data.map(r=>r.pct_defauts||0));
+  animCount(document.getElementById('kpi-defauts'), defauts_val*100, '%', 1);
+  setBadge('kpi-defauts-badge',
+    defauts_val<0.05?'▲ Bon':defauts_val<0.12?'◆ Moyen':'▼ Élevé',
+    defauts_val<0.05?'badge-green':defauts_val<0.12?'badge-orange':'badge-red');
+
+  // % Réalisation du plan moyen
+  const plan_val = mean(data.map(r=>r.pct_plan||0));
+  animCount(document.getElementById('kpi-plan'), plan_val*100, '%', 1);
+  setBadge('kpi-plan-badge',
+    plan_val>=0.85?'▲ Excellent':plan_val>=0.65?'◆ Bon':'▼ Faible',
+    plan_val>=0.85?'badge-green':plan_val>=0.65?'badge-orange':'badge-red');
+
+  // MTBF moyen (only sessions with pannes>0)
+  const mtbf_data = data.filter(r=>r.pannes>0&&r.mtbf>0);
+  const mtbf_val  = mtbf_data.length ? mean(mtbf_data.map(r=>r.mtbf)) : 0;
+  animCount(document.getElementById('kpi-mtbf'), mtbf_val, 'h', 1);
+  setBadge('kpi-mtbf-badge',
+    mtbf_val>=5?'▲ Bon':mtbf_val>=2?'◆ Moyen':'▼ Faible',
+    mtbf_val>=5?'badge-green':mtbf_val>=2?'badge-orange':'badge-red');
+
+  // MTTR moyen (only sessions with pannes>0)
+  const mttr_data = data.filter(r=>r.pannes>0&&r.mttr>0);
+  const mttr_val  = mttr_data.length ? mean(mttr_data.map(r=>r.mttr)) : 0;
+  animCount(document.getElementById('kpi-mttr'), mttr_val, 'h', 2);
+  setBadge('kpi-mttr-badge',
+    mttr_val<=0.5?'▲ Bon':mttr_val<=1.5?'◆ Moyen':'▼ Élevé',
+    mttr_val<=0.5?'badge-green':mttr_val<=1.5?'badge-orange':'badge-red');
+
+  // Quantité NC totale
+  const qte_nc_val = sum(data.map(r=>r.qte_nc||0));
+  animCount(document.getElementById('kpi-qte-nc'), qte_nc_val, '', 0);
+  const nc_rate = qte_nc_val / (prod + qte_nc_val);
+  setBadge('kpi-qte-nc-badge',
+    (nc_rate*100).toFixed(1)+'%',
+    nc_rate<0.05?'badge-green':nc_rate<0.12?'badge-orange':'badge-red');
+
+  // Pannes totales
+  const pannes_val = sum(data.map(r=>r.pannes||0));
+  animCount(document.getElementById('kpi-pannes'), pannes_val, '', 0);
+  const pannes_rate = pannes_val / data.length;
+  setBadge('kpi-pannes-badge',
+    pannes_rate.toFixed(1)+'/session',
+    pannes_rate<=0.5?'badge-green':pannes_rate<=1.5?'badge-orange':'badge-red');
+
+  /* ── TRS Gauge Row ── */
+  const dispo=mean(data.map(r=>r.dispo)), perf=mean(data.map(r=>r.perf));
+  const qualv=mean(data.map(r=>r.qualite)), trsv=mean(data.map(r=>r.trs));
+  document.getElementById('trs-dispo').textContent  = pct(dispo);
+  document.getElementById('trs-perf').textContent   = pct(perf);
+  document.getElementById('trs-qual').textContent   = pct(qualv);
+  document.getElementById('trs-global').textContent = pct(trsv);
+  setTimeout(()=>{
+    ['dispo','perf','qual','trs'].forEach(k=>{
+      document.getElementById('bar-'+k).style.width = pct(k==='trs'?trsv:k==='qual'?qualv:k==='perf'?perf:dispo);
+    });
+    setGauge('g-dispo', dispo); setGauge('g-perf', perf);
+    setGauge('g-qual', qualv);  setGauge('g-trs', trsv);
+  }, 200);
+}
+
+/* ── Chart helpers ── */
+function destroyChart(key) { if(charts[key]) { charts[key].destroy(); delete charts[key]; } }
+
+function updateTimeline(data) {
+  const bm={};
+  data.forEach(r=>{
+    const k=`${r.year}-${String(r.month).padStart(2,'0')}`;
+    if(!bm[k]) bm[k]={prod:0,trs:[],label:months()[r.month-1]+' '+r.year};
+    bm[k].prod+=r.qte_conforme; bm[k].trs.push(r.trs);
+  });
+  const keys=Object.keys(bm).sort();
+  destroyChart('timeline');
+  charts.timeline = new Chart(document.getElementById('chart-timeline'),{
+    data:{
+      labels:keys.map(k=>bm[k].label),
+      datasets:[
+        {type:'bar',label:t('kpiProduction'),data:keys.map(k=>bm[k].prod),backgroundColor:'rgba(37,99,235,0.55)',borderColor:'#2563eb',borderWidth:1,borderRadius:5,yAxisID:'y'},
+        {type:'line',label:t('oeeLabel'),data:keys.map(k=>mean(bm[k].trs)*100),borderColor:'#ea580c',backgroundColor:'rgba(234,88,12,0.06)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#ea580c',fill:true,tension:0.4,yAxisID:'y1'}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{display:false},tooltip:TP},
+      scales:{
+        x:{grid:{color:'#f1f4f9'},ticks:{font:{size:10},maxRotation:45}},
+        y:{grid:{color:'#f1f4f9'},position:'left',ticks:{font:{size:10}}},
+        y1:{position:'right',grid:{display:false},min:0,max:100,ticks:{font:{size:10},callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+function updateProduitDonut(data) {
+  const by={};
+  data.forEach(r=>{by[r.produit]=(by[r.produit]||0)+r.qte_conforme;});
+  const labels=Object.keys(by).sort(), vals=labels.map(l=>by[l]);
+  destroyChart('donut');
+  charts.donut = new Chart(document.getElementById('chart-produit-donut'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:PALETTE,borderWidth:2,borderColor:'#fff',hoverOffset:8}]},
+    options:{
+      responsive:true, maintainAspectRatio:true, cutout:'66%',
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#475569',boxWidth:10,font:{size:11},padding:14}},
+        tooltip:{...TP,callbacks:{label:ctx=>` ${ctx.label}: ${fmtNum(ctx.raw)} (${(ctx.raw/vals.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)`}}
+      }
+    }
+  });
+}
+
+function updateQualDispo(data) {
+  const by={};
+  data.forEach(r=>{if(!by[r.ligne]) by[r.ligne]={qual:[],dispo:[]}; by[r.ligne].qual.push(r.qualite); by[r.ligne].dispo.push(r.dispo);});
+  const labels=Object.keys(by).sort();
+  destroyChart('qualDispo');
+  charts.qualDispo = new Chart(document.getElementById('chart-qual-dispo'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:t('quality')+' %',data:labels.map(l=>+(mean(by[l].qual)*100).toFixed(1)),backgroundColor:'rgba(22,163,74,0.7)',borderRadius:4},
+      {label:t('availability')+' %',data:labels.map(l=>+(mean(by[l].dispo)*100).toFixed(1)),backgroundColor:'rgba(37,99,235,0.7)',borderRadius:4}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{labels:{color:'#475569',font:{size:10},boxWidth:10}},tooltip:TP},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{grid:{color:'#f1f4f9'},min:60,max:100,ticks:{callback:v=>v+'%',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function updateCauses(data) {
+  const by={};
+  data.filter(r=>r.cause).forEach(r=>{by[r.cause]=(by[r.cause]||0)+1;});
+  const entries=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+  const total=entries.reduce((s,[,v])=>s+v,0);
+  if(!entries.length){document.getElementById('causes-table').innerHTML='<div class="no-data">—</div>';return;}
+  document.getElementById('causes-table').innerHTML=`<table class="cause-table">${entries.map(([cause,n],i)=>`
+    <tr><td>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:3px;">${cause}</div>
+      <div class="cause-bar-row">
+        <div class="cause-mini-bar" style="width:${(n/total*130).toFixed(0)}px;background:${PALETTE[i%PALETTE.length]}"></div>
+      </div>
+    </td><td>
+      <div class="cause-count">${n}</div>
+      <div class="cause-pct">${(n/total*100).toFixed(0)}%</div>
+    </td></tr>`).join('')}</table>`;
+}
+
+function updateLigneBar(data) {
+  const by={};
+  data.forEach(r=>{by[r.ligne]=(by[r.ligne]||0)+r.qte_conforme;});
+  const labels=Object.keys(by).sort(), vals=labels.map(l=>by[l]);
+  destroyChart('ligne');
+  charts.ligne = new Chart(document.getElementById('chart-ligne-bar'),{
+    type:'bar',
+    data:{labels,datasets:[{label:t('kpiProduction'),data:vals,backgroundColor:PALETTE.slice(0,labels.length),borderRadius:5,borderSkipped:false}]},
+    options:{
+      responsive:true, maintainAspectRatio:true, indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:TP},
+      scales:{
+        x:{grid:{color:'#f1f4f9'},ticks:{font:{size:10},callback:v=>fmtNum(v)}},
+        y:{grid:{display:false},ticks:{font:{size:10}}}
+      }
+    }
+  });
+}
+
+function updateTemps(data) {
+  const bm={};
+  data.forEach(r=>{
+    const k=`${r.year}-${String(r.month).padStart(2,'0')}`;
+    if(!bm[k]) bm[k]={label:months()[r.month-1]+' '+String(r.year).slice(2),fonct:0,perdu:0};
+    bm[k].fonct+=r.temps_fonct; bm[k].perdu+=r.temps_perdu;
+  });
+  const keys=Object.keys(bm).sort();
+  destroyChart('temps');
+  charts.temps = new Chart(document.getElementById('chart-temps'),{
+    type:'bar',
+    data:{
+      labels:keys.map(k=>bm[k].label),
+      datasets:[
+        {label:t('operating'),data:keys.map(k=>bm[k].fonct),backgroundColor:'rgba(37,99,235,0.7)',borderRadius:3,stack:'s'},
+        {label:t('lost'),data:keys.map(k=>bm[k].perdu),backgroundColor:'rgba(220,38,38,0.7)',borderRadius:3,stack:'s'}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{labels:{color:'#475569',font:{size:10},boxWidth:10}},tooltip:TP},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
+        y:{grid:{color:'#f1f4f9'},stacked:true,ticks:{font:{size:10}}}
+      }
+    }
+  });
+}
+
+function updateTrsProduit(data) {
+  const by={};
+  data.forEach(r=>{if(!by[r.produit]) by[r.produit]=[]; by[r.produit].push(r.trs);});
+  const labels=Object.keys(by).sort();
+  const vals=labels.map(l=>+(mean(by[l])*100).toFixed(1));
+  destroyChart('trsProduit');
+  charts.trsProduit = new Chart(document.getElementById('chart-trs-produit'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:t('oeeLabel'), data:vals,
+      backgroundColor:vals.map(v=>v>=65?'rgba(22,163,74,0.7)':v>=50?'rgba(217,119,6,0.7)':'rgba(220,38,38,0.7)'),
+      borderRadius:5, borderSkipped:false
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{display:false},tooltip:TP},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{grid:{color:'#f1f4f9'},min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function updateScatter(data) {
+  const bL={};
+  data.forEach(r=>{if(!bL[r.ligne]) bL[r.ligne]=[]; bL[r.ligne].push({x:+(r.pct_defauts*100).toFixed(2),y:+(r.pct_plan*100).toFixed(2)});});
+  const datasets=Object.entries(bL).map(([l,pts],i)=>({
+    label:l, data:pts, backgroundColor:PALETTE[i%PALETTE.length]+'88', pointRadius:5, pointHoverRadius:7
+  }));
+  destroyChart('scatter');
+  charts.scatter = new Chart(document.getElementById('chart-scatter'),{
+    type:'scatter', data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{labels:{color:'#475569',font:{size:10},boxWidth:8}},
+        tooltip:{...TP,callbacks:{label:ctx=>`${ctx.dataset.label}: Défauts ${ctx.parsed.x}% | Plan ${ctx.parsed.y}%`}}
+      },
+      scales:{
+        x:{grid:{color:'#f1f4f9'},title:{display:true,text:'% Défauts',color:'#94a3b8',font:{size:11}},ticks:{callback:v=>v+'%',font:{size:10}}},
+        y:{grid:{color:'#f1f4f9'},title:{display:true,text:'% Plan',color:'#94a3b8',font:{size:11}},ticks:{callback:v=>v+'%',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function updateAll(data) {
+  if(!data) data = getFiltered();
+  if(!data.length) return;
+  updateKPIs(data);
+  updateTimeline(data);
+  updateProduitDonut(data);
+  updateQualDispo(data);
+  updateCauses(data);
+  updateLigneBar(data);
+  updateTemps(data);
+  updateTrsProduit(data);
+  updateScatter(data);
+}
+
+function exportPDF() { window.print(); }
+function exportCSV() {
+  const data=getFiltered();
+  const cols=['date','year','month','quarter','shift','ligne','produit','qte_conforme','qte_nc','pct_defauts','pct_plan','trs','dispo','perf','qualite','cause'];
+  const csv=[cols.join(';'),...data.map(r=>cols.map(c=>{const v=r[c];return typeof v==='number'?v.toFixed(4):(v||'');}).join(';'))].join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='production_data.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+function refreshDashboard() {
+  const loader=document.getElementById('loader');
+  loader.style.opacity='1'; loader.style.pointerEvents='auto';
+  setTimeout(()=>{updateAll();loader.style.opacity='0';loader.style.pointerEvents='none';},700);
+}
+
+/* ── Default data ── */
+const DEFAULT_DATA = [{"date":"2021-01-06","year":2021,"month":1,"quarter":1,"shift":3,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":415,"qte_nc":35,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.077778,"pct_plan":0.576389,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.625,"qualite":0.922222,"trs":0.576389},{"date":"2021-01-08","year":2021,"month":1,"quarter":1,"shift":1,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":442,"qte_nc":75,"cause":"Manque d'emballage","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.145068,"pct_plan":0.613889,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.718056,"qualite":0.854932,"trs":0.52619},{"date":"2021-02-01","year":2021,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 5","produit":"Produit 3","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":423,"qte_nc":90,"cause":"Manque d'emballage","pannes":3,"uph":90.0,"upph":30.0,"pct_defauts":0.175439,"pct_plan":0.671429,"mtbf":1.3333,"mttr":1.0,"dispo":0.571429,"perf":0.814286,"qualite":0.824561,"trs":0.383673},{"date":"2021-02-08","year":2021,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 2","produit":"Produit 1","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":416,"qte_nc":67,"cause":"","pannes":0,"uph":90.0,"upph":22.5,"pct_defauts":0.138716,"pct_plan":0.660317,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.766667,"qualite":0.861284,"trs":0.660317},{"date":"2021-02-11","year":2021,"month":2,"quarter":1,"shift":3,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":404,"qte_nc":57,"cause":"Préparation du matériel","pannes":2,"uph":102.86,"upph":34.29,"pct_defauts":0.123644,"pct_plan":0.561111,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.640278,"qualite":0.876356,"trs":0.400794},{"date":"2021-02-15","year":2021,"month":2,"quarter":1,"shift":1,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":480,"qte_nc":60,"cause":"Problème de qualité","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.111111,"pct_plan":0.761905,"mtbf":2.0,"mttr":1.5,"dispo":0.571429,"perf":0.857143,"qualite":0.888889,"trs":0.435374},{"date":"2021-02-19","year":2021,"month":2,"quarter":1,"shift":1,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":428,"qte_nc":74,"cause":"Problème machine","pannes":2,"uph":102.86,"upph":34.29,"pct_defauts":0.14741,"pct_plan":0.594444,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.697222,"qualite":0.85259,"trs":0.424603},{"date":"2021-02-25","year":2021,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":403,"qte_nc":75,"cause":"Manque de main-d'oeuvre","pannes":2,"uph":102.86,"upph":34.29,"pct_defauts":0.156904,"pct_plan":0.559722,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.663889,"qualite":0.843096,"trs":0.399802},{"date":"2021-02-28","year":2021,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 4","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":415,"qte_nc":66,"cause":"Changement soudain de plan","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.137214,"pct_plan":0.576389,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.668056,"qualite":0.862786,"trs":0.411706},{"date":"2021-03-02","year":2021,"month":3,"quarter":1,"shift":3,"ligne":"Ligne 3","produit":"Produit 7","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":440,"qte_nc":58,"cause":"Retard de matériel","pannes":1,"uph":85.71,"upph":28.57,"pct_defauts":0.116466,"pct_plan":0.733333,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.83,"qualite":0.883534,"trs":0.628571},{"date":"2021-03-03","year":2021,"month":3,"quarter":1,"shift":2,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":479,"qte_nc":52,"cause":"Changement soudain de plan","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.097928,"pct_plan":0.665278,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.7375,"qualite":0.902072,"trs":0.570238},{"date":"2021-03-05","year":2021,"month":3,"quarter":1,"shift":1,"ligne":"Ligne 4","produit":"Produit 3","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":489,"qte_nc":56,"cause":"Changement soudain de plan","pannes":1,"uph":90.0,"upph":30.0,"pct_defauts":0.102752,"pct_plan":0.77619,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.865079,"qualite":0.897248,"trs":0.554422},{"date":"2021-03-22","year":2021,"month":3,"quarter":1,"shift":3,"ligne":"Ligne 5","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":466,"qte_nc":65,"cause":"Changement soudain de plan","pannes":3,"uph":90.0,"upph":22.5,"pct_defauts":0.122411,"pct_plan":0.739683,"mtbf":1.3333,"mttr":1.0,"dispo":0.571429,"perf":0.842857,"qualite":0.877589,"trs":0.422676},{"date":"2021-03-24","year":2021,"month":3,"quarter":1,"shift":3,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":400,"qte_nc":26,"cause":"Changement soudain de plan","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.061033,"pct_plan":0.555556,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.591667,"qualite":0.938967,"trs":0.555556},{"date":"2021-04-03","year":2021,"month":4,"quarter":2,"shift":3,"ligne":"Ligne 2","produit":"Produit 4","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":475,"qte_nc":69,"cause":"Préparation du matériel","pannes":1,"uph":97.3,"upph":32.43,"pct_defauts":0.126838,"pct_plan":0.697504,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.798825,"qualite":0.873162,"trs":0.59786},{"date":"2021-04-06","year":2021,"month":4,"quarter":2,"shift":2,"ligne":"Ligne 4","produit":"Produit 7","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":461,"qte_nc":80,"cause":"Problème machine","pannes":1,"uph":85.71,"upph":28.57,"pct_defauts":0.147874,"pct_plan":0.768333,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.901667,"qualite":0.852126,"trs":0.658571},{"date":"2021-04-09","year":2021,"month":4,"quarter":2,"shift":2,"ligne":"Ligne 4","produit":"Produit 4","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":444,"qte_nc":81,"cause":"Changement soudain de plan","pannes":1,"uph":97.3,"upph":32.43,"pct_defauts":0.154286,"pct_plan":0.651982,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.770925,"qualite":0.845714,"trs":0.465702},{"date":"2021-05-06","year":2021,"month":5,"quarter":2,"shift":1,"ligne":"Ligne 2","produit":"Produit 3","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":442,"qte_nc":73,"cause":"Retard de matériel","pannes":1,"uph":90.0,"upph":30.0,"pct_defauts":0.141748,"pct_plan":0.701587,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.81746,"qualite":0.858252,"trs":0.601361},{"date":"2021-05-11","year":2021,"month":5,"quarter":2,"shift":2,"ligne":"Ligne 5","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":454,"qte_nc":64,"cause":"Retard de matériel","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.123552,"pct_plan":0.720635,"mtbf":4.0,"mttr":3.0,"dispo":0.571429,"perf":0.822222,"qualite":0.876448,"trs":0.411791},{"date":"2021-05-13","year":2021,"month":5,"quarter":2,"shift":1,"ligne":"Ligne 4","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":474,"qte_nc":80,"cause":"Préparation du matériel","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.144404,"pct_plan":0.658333,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.769444,"qualite":0.855596,"trs":0.470238},{"date":"2021-05-14","year":2021,"month":5,"quarter":2,"shift":3,"ligne":"Ligne 3","produit":"Produit 7","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":421,"qte_nc":59,"cause":"Manque de main-d'oeuvre","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.122917,"pct_plan":0.701667,"mtbf":0,"mttr":0,"dispo":0.857143,"perf":0.8,"qualite":0.877083,"trs":0.601429},{"date":"2021-05-19","year":2021,"month":5,"quarter":2,"shift":1,"ligne":"Ligne 2","produit":"Produit 7","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":474,"qte_nc":76,"cause":"Préparation du matériel","pannes":2,"uph":85.71,"upph":28.57,"pct_defauts":0.138182,"pct_plan":0.79,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.916667,"qualite":0.861818,"trs":0.677143},{"date":"2021-05-19","year":2021,"month":5,"quarter":2,"shift":2,"ligne":"Ligne 4","produit":"Produit 3","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":489,"qte_nc":69,"cause":"Changement soudain de plan","pannes":3,"uph":90.0,"upph":30.0,"pct_defauts":0.123656,"pct_plan":0.77619,"mtbf":1.3333,"mttr":1.0,"dispo":0.571429,"perf":0.885714,"qualite":0.876344,"trs":0.443537},{"date":"2021-06-12","year":2021,"month":6,"quarter":2,"shift":1,"ligne":"Ligne 3","produit":"Produit 1","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":472,"qte_nc":52,"cause":"","pannes":0,"uph":90.0,"upph":22.5,"pct_defauts":0.099237,"pct_plan":0.749206,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.831746,"qualite":0.900763,"trs":0.749206},{"date":"2021-06-16","year":2021,"month":6,"quarter":2,"shift":2,"ligne":"Ligne 2","produit":"Produit 1","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":406,"qte_nc":70,"cause":"Manque d'emballage","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.147059,"pct_plan":0.644444,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.755556,"qualite":0.852941,"trs":0.552381},{"date":"2021-06-17","year":2021,"month":6,"quarter":2,"shift":3,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":499,"qte_nc":130,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.206677,"pct_plan":0.693056,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.873611,"qualite":0.793323,"trs":0.693056},{"date":"2021-06-19","year":2021,"month":6,"quarter":2,"shift":3,"ligne":"Ligne 2","produit":"Produit 7","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":467,"qte_nc":80,"cause":"","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.146252,"pct_plan":0.778333,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.911667,"qualite":0.853748,"trs":0.778333},{"date":"2021-06-22","year":2021,"month":6,"quarter":2,"shift":1,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":493,"qte_nc":63,"cause":"Problème machine","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.113309,"pct_plan":0.684722,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.772222,"qualite":0.886691,"trs":0.489087},{"date":"2021-07-18","year":2021,"month":7,"quarter":3,"shift":3,"ligne":"Ligne 2","produit":"Produit 4","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":412,"qte_nc":78,"cause":"Manque de main-d'oeuvre","pannes":1,"uph":97.3,"upph":32.43,"pct_defauts":0.159184,"pct_plan":0.604993,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.71953,"qualite":0.840816,"trs":0.518565},{"date":"2021-07-22","year":2021,"month":7,"quarter":3,"shift":1,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":459,"qte_nc":62,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.119002,"pct_plan":0.6375,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.723611,"qualite":0.880998,"trs":0.6375},{"date":"2021-07-27","year":2021,"month":7,"quarter":3,"shift":2,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":443,"qte_nc":74,"cause":"Problème de moule","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.143133,"pct_plan":0.615278,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.718056,"qualite":0.856867,"trs":0.527381},{"date":"2021-07-29","year":2021,"month":7,"quarter":3,"shift":2,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":469,"qte_nc":57,"cause":"Préparation du matériel","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.108365,"pct_plan":0.651389,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.730556,"qualite":0.891635,"trs":0.558333},{"date":"2021-08-15","year":2021,"month":8,"quarter":3,"shift":1,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":426,"qte_nc":35,"cause":"Changement soudain de plan","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.075922,"pct_plan":0.591667,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.640278,"qualite":0.924078,"trs":0.422619},{"date":"2021-08-18","year":2021,"month":8,"quarter":3,"shift":1,"ligne":"Ligne 2","produit":"Produit 7","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":405,"qte_nc":77,"cause":"Préparation du matériel","pannes":1,"uph":85.71,"upph":28.57,"pct_defauts":0.159751,"pct_plan":0.675,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.803333,"qualite":0.840249,"trs":0.578571},{"date":"2021-08-31","year":2021,"month":8,"quarter":3,"shift":1,"ligne":"Ligne 5","produit":"Produit 1","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":402,"qte_nc":84,"cause":"","pannes":0,"uph":90.0,"upph":22.5,"pct_defauts":0.17284,"pct_plan":0.638095,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.771429,"qualite":0.82716,"trs":0.638095},{"date":"2021-09-01","year":2021,"month":9,"quarter":3,"shift":2,"ligne":"Ligne 2","produit":"Produit 1","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":496,"qte_nc":51,"cause":"","pannes":0,"uph":90.0,"upph":22.5,"pct_defauts":0.093236,"pct_plan":0.787302,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.868254,"qualite":0.906764,"trs":0.787302},{"date":"2021-09-08","year":2021,"month":9,"quarter":3,"shift":2,"ligne":"Ligne 1","produit":"Produit 7","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":436,"qte_nc":160,"cause":"","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.268456,"pct_plan":0.726667,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.993333,"qualite":0.731544,"trs":0.726667},{"date":"2021-09-29","year":2021,"month":9,"quarter":3,"shift":1,"ligne":"Ligne 3","produit":"Produit 1","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":496,"qte_nc":57,"cause":"Préparation du matériel","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.103074,"pct_plan":0.787302,"mtbf":7.0,"mttr":0.0,"dispo":1.0,"perf":0.877778,"qualite":0.896926,"trs":0.787302},{"date":"2021-09-29","year":2021,"month":9,"quarter":3,"shift":1,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":456,"qte_nc":40,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.080645,"pct_plan":0.633333,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.688889,"qualite":0.919355,"trs":0.633333},{"date":"2021-10-03","year":2021,"month":10,"quarter":4,"shift":2,"ligne":"Ligne 2","produit":"Produit 7","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":426,"qte_nc":71,"cause":"Manque d'emballage","pannes":3,"uph":85.71,"upph":28.57,"pct_defauts":0.142857,"pct_plan":0.71,"mtbf":1.6667,"mttr":0.6667,"dispo":0.714286,"perf":0.828333,"qualite":0.857143,"trs":0.507143},{"date":"2021-10-04","year":2021,"month":10,"quarter":4,"shift":3,"ligne":"Ligne 5","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":445,"qte_nc":69,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.134241,"pct_plan":0.618056,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.713889,"qualite":0.865759,"trs":0.618056},{"date":"2021-10-06","year":2021,"month":10,"quarter":4,"shift":3,"ligne":"Ligne 4","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":471,"qte_nc":62,"cause":"Changement soudain de plan","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.116323,"pct_plan":0.654167,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.740278,"qualite":0.883677,"trs":0.467262},{"date":"2021-11-01","year":2021,"month":11,"quarter":4,"shift":3,"ligne":"Ligne 3","produit":"Produit 7","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":459,"qte_nc":65,"cause":"Problème machine","pannes":2,"uph":85.71,"upph":28.57,"pct_defauts":0.124046,"pct_plan":0.765,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.873333,"qualite":0.875954,"trs":0.546429},{"date":"2021-11-07","year":2021,"month":11,"quarter":4,"shift":1,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":416,"qte_nc":80,"cause":"Préparation du matériel","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.16129,"pct_plan":0.577778,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.688889,"qualite":0.83871,"trs":0.495238},{"date":"2021-11-13","year":2021,"month":11,"quarter":4,"shift":2,"ligne":"Ligne 5","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":444,"qte_nc":74,"cause":"Préparation du matériel","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.142857,"pct_plan":0.704762,"mtbf":2.0,"mttr":1.5,"dispo":0.571429,"perf":0.822222,"qualite":0.857143,"trs":0.402721},{"date":"2021-12-07","year":2021,"month":12,"quarter":4,"shift":3,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":451,"qte_nc":62,"cause":"Préparation du matériel","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.120858,"pct_plan":0.715873,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.814286,"qualite":0.879142,"trs":0.613605},{"date":"2021-12-07","year":2021,"month":12,"quarter":4,"shift":3,"ligne":"Ligne 5","produit":"Produit 3","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":470,"qte_nc":58,"cause":"Problème machine","pannes":1,"uph":90.0,"upph":30.0,"pct_defauts":0.109848,"pct_plan":0.746032,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.838095,"qualite":0.890152,"trs":0.639456},{"date":"2022-01-01","year":2022,"month":1,"quarter":1,"shift":2,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":441,"qte_nc":90,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.169492,"pct_plan":0.6125,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.7375,"qualite":0.830508,"trs":0.6125},{"date":"2022-01-17","year":2022,"month":1,"quarter":1,"shift":3,"ligne":"Ligne 5","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":476,"qte_nc":57,"cause":"Préparation du matériel","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.106942,"pct_plan":0.755556,"mtbf":4.0,"mttr":3.0,"dispo":0.571429,"perf":0.846032,"qualite":0.893058,"trs":0.431746},{"date":"2022-02-15","year":2022,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 1","produit":"Produit 7","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":432,"qte_nc":145,"cause":"Manque d'emballage","pannes":2,"uph":85.71,"upph":28.57,"pct_defauts":0.2513,"pct_plan":0.72,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.961667,"qualite":0.7487,"trs":0.617143},{"date":"2022-02-18","year":2022,"month":2,"quarter":1,"shift":3,"ligne":"Ligne 4","produit":"Produit 4","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":424,"qte_nc":66,"cause":"Problème de qualité","pannes":2,"uph":97.3,"upph":32.43,"pct_defauts":0.134694,"pct_plan":0.622614,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.71953,"qualite":0.865306,"trs":0.533669},{"date":"2022-02-28","year":2022,"month":2,"quarter":1,"shift":1,"ligne":"Ligne 4","produit":"Produit 4","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":471,"qte_nc":86,"cause":"Retard de matériel","pannes":1,"uph":97.3,"upph":32.43,"pct_defauts":0.154399,"pct_plan":0.69163,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.817915,"qualite":0.845601,"trs":0.592826},{"date":"2022-04-15","year":2022,"month":4,"quarter":2,"shift":3,"ligne":"Ligne 5","produit":"Produit 7","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":492,"qte_nc":67,"cause":"Retard de matériel","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.119857,"pct_plan":0.82,"mtbf":0,"mttr":0,"dispo":0.714286,"perf":0.931667,"qualite":0.880143,"trs":0.585714},{"date":"2022-04-21","year":2022,"month":4,"quarter":2,"shift":1,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":416,"qte_nc":69,"cause":"Problème machine","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.142268,"pct_plan":0.577778,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.673611,"qualite":0.857732,"trs":0.412698},{"date":"2022-05-03","year":2022,"month":5,"quarter":2,"shift":2,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":500,"qte_nc":41,"cause":"Changement soudain de plan","pannes":2,"uph":102.86,"upph":34.29,"pct_defauts":0.075786,"pct_plan":0.694444,"mtbf":2.0,"mttr":1.5,"dispo":0.571429,"perf":0.751389,"qualite":0.924214,"trs":0.396825},{"date":"2022-05-31","year":2022,"month":5,"quarter":2,"shift":3,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":478,"qte_nc":12,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.02449,"pct_plan":0.663889,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.680556,"qualite":0.97551,"trs":0.663889},{"date":"2022-06-11","year":2022,"month":6,"quarter":2,"shift":1,"ligne":"Ligne 4","produit":"Produit 3","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":434,"qte_nc":83,"cause":"Changement soudain de plan","pannes":2,"uph":90.0,"upph":30.0,"pct_defauts":0.160542,"pct_plan":0.688889,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.820635,"qualite":0.839458,"trs":0.590476},{"date":"2022-06-16","year":2022,"month":6,"quarter":2,"shift":2,"ligne":"Ligne 5","produit":"Produit 3","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":400,"qte_nc":52,"cause":"Changement soudain de plan","pannes":2,"uph":90.0,"upph":30.0,"pct_defauts":0.115044,"pct_plan":0.634921,"mtbf":2.0,"mttr":1.5,"dispo":0.571429,"perf":0.71746,"qualite":0.884956,"trs":0.362812},{"date":"2022-06-18","year":2022,"month":6,"quarter":2,"shift":2,"ligne":"Ligne 1","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":441,"qte_nc":84,"cause":"Préparation du matériel","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.16,"pct_plan":0.7,"mtbf":4.0,"mttr":3.0,"dispo":0.571429,"perf":0.833333,"qualite":0.84,"trs":0.4},{"date":"2022-06-20","year":2022,"month":6,"quarter":2,"shift":3,"ligne":"Ligne 4","produit":"Produit 4","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":429,"qte_nc":73,"cause":"","pannes":0,"uph":97.3,"upph":32.43,"pct_defauts":0.145418,"pct_plan":0.629956,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.737151,"qualite":0.854582,"trs":0.629956},{"date":"2022-11-01","year":2022,"month":11,"quarter":4,"shift":3,"ligne":"Ligne 3","produit":"Produit 1","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":463,"qte_nc":20,"cause":"Préparation du matériel","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.041408,"pct_plan":0.734921,"mtbf":7.0,"mttr":0.0,"dispo":1.0,"perf":0.766667,"qualite":0.958592,"trs":0.734921},{"date":"2022-11-06","year":2022,"month":11,"quarter":4,"shift":2,"ligne":"Ligne 3","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":496,"qte_nc":35,"cause":"Préparation du matériel","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.065913,"pct_plan":0.688889,"mtbf":7.0,"mttr":0.0,"dispo":1.0,"perf":0.7375,"qualite":0.934087,"trs":0.688889},{"date":"2023-01-04","year":2023,"month":1,"quarter":1,"shift":1,"ligne":"Ligne 1","produit":"Produit 4","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":484,"qte_nc":140,"cause":"Retard de matériel","pannes":1,"uph":97.3,"upph":32.43,"pct_defauts":0.224359,"pct_plan":0.71072,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.9163,"qualite":0.775641,"trs":0.507657},{"date":"2023-01-05","year":2023,"month":1,"quarter":1,"shift":3,"ligne":"Ligne 4","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":427,"qte_nc":63,"cause":"Problème machine","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.128571,"pct_plan":0.593056,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.680556,"qualite":0.871429,"trs":0.508333},{"date":"2023-01-18","year":2023,"month":1,"quarter":1,"shift":1,"ligne":"Ligne 3","produit":"Produit 7","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":417,"qte_nc":33,"cause":"","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.073333,"pct_plan":0.695,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.75,"qualite":0.926667,"trs":0.695},{"date":"2023-01-19","year":2023,"month":1,"quarter":1,"shift":3,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":426,"qte_nc":60,"cause":"Préparation du matériel","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.123457,"pct_plan":0.67619,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.771429,"qualite":0.876543,"trs":0.482993},{"date":"2023-01-29","year":2023,"month":1,"quarter":1,"shift":3,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":464,"qte_nc":170,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.268139,"pct_plan":0.644444,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.880556,"qualite":0.731861,"trs":0.644444},{"date":"2023-01-31","year":2023,"month":1,"quarter":1,"shift":2,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":410,"qte_nc":60,"cause":"Problème machine","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.12766,"pct_plan":0.650794,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.746032,"qualite":0.87234,"trs":0.557823},{"date":"2023-02-03","year":2023,"month":2,"quarter":1,"shift":1,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":429,"qte_nc":84,"cause":"Problème de qualité","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.163743,"pct_plan":0.680952,"mtbf":2.0,"mttr":1.5,"dispo":0.571429,"perf":0.814286,"qualite":0.836257,"trs":0.389116},{"date":"2023-02-09","year":2023,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 3","produit":"Produit 3","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":404,"qte_nc":25,"cause":"","pannes":0,"uph":90.0,"upph":30.0,"pct_defauts":0.058275,"pct_plan":0.64127,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.680952,"qualite":0.941725,"trs":0.64127},{"date":"2023-02-25","year":2023,"month":2,"quarter":1,"shift":1,"ligne":"Ligne 1","produit":"Produit 1","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":450,"qte_nc":120,"cause":"Changement soudain de plan","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.210526,"pct_plan":0.714286,"mtbf":4.0,"mttr":3.0,"dispo":0.571429,"perf":0.904762,"qualite":0.789474,"trs":0.408163},{"date":"2023-02-27","year":2023,"month":2,"quarter":1,"shift":2,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":407,"qte_nc":78,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.160825,"pct_plan":0.565278,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.673611,"qualite":0.839175,"trs":0.565278},{"date":"2023-02-28","year":2023,"month":2,"quarter":1,"shift":3,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":482,"qte_nc":79,"cause":"Problème de moule","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.14082,"pct_plan":0.765079,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.890476,"qualite":0.85918,"trs":0.546485},{"date":"2023-03-03","year":2023,"month":3,"quarter":1,"shift":1,"ligne":"Ligne 5","produit":"Produit 7","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":446,"qte_nc":62,"cause":"Changement soudain de plan","pannes":1,"uph":85.71,"upph":28.57,"pct_defauts":0.122047,"pct_plan":0.743333,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.846667,"qualite":0.877953,"trs":0.530952},{"date":"2023-03-15","year":2023,"month":3,"quarter":1,"shift":2,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":449,"qte_nc":150,"cause":"Manque de main-d'oeuvre","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.250417,"pct_plan":0.623611,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.831944,"qualite":0.749583,"trs":0.534524},{"date":"2023-03-16","year":2023,"month":3,"quarter":1,"shift":2,"ligne":"Ligne 1","produit":"Produit 1","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":418,"qte_nc":89,"cause":"Problème de moule","pannes":1,"uph":90.0,"upph":22.5,"pct_defauts":0.175542,"pct_plan":0.663492,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.804762,"qualite":0.824458,"trs":0.473923},{"date":"2023-03-29","year":2023,"month":3,"quarter":1,"shift":2,"ligne":"Ligne 4","produit":"Produit 1","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":477,"qte_nc":79,"cause":"Manque de main-d'oeuvre","pannes":3,"uph":90.0,"upph":22.5,"pct_defauts":0.142086,"pct_plan":0.757143,"mtbf":1.6667,"mttr":0.6667,"dispo":0.714286,"perf":0.88254,"qualite":0.857914,"trs":0.540816},{"date":"2023-04-20","year":2023,"month":4,"quarter":2,"shift":2,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":479,"qte_nc":83,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.147687,"pct_plan":0.665278,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.780556,"qualite":0.852313,"trs":0.665278},{"date":"2023-05-13","year":2023,"month":5,"quarter":2,"shift":2,"ligne":"Ligne 5","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":473,"qte_nc":64,"cause":"Problème de moule","pannes":3,"uph":102.86,"upph":34.29,"pct_defauts":0.119181,"pct_plan":0.656944,"mtbf":1.6667,"mttr":0.6667,"dispo":0.714286,"perf":0.745833,"qualite":0.880819,"trs":0.469246},{"date":"2023-06-18","year":2023,"month":6,"quarter":2,"shift":3,"ligne":"Ligne 4","produit":"Produit 3","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":457,"qte_nc":65,"cause":"","pannes":0,"uph":90.0,"upph":30.0,"pct_defauts":0.124521,"pct_plan":0.725397,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.828571,"qualite":0.875479,"trs":0.725397},{"date":"2023-07-24","year":2023,"month":7,"quarter":3,"shift":3,"ligne":"Ligne 2","produit":"Produit 1","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":420,"qte_nc":51,"cause":"Manque d'emballage","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.10828,"pct_plan":0.666667,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.747619,"qualite":0.89172,"trs":0.47619},{"date":"2023-07-31","year":2023,"month":7,"quarter":3,"shift":2,"ligne":"Ligne 1","produit":"Produit 3","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":500,"qte_nc":130,"cause":"","pannes":0,"uph":90.0,"upph":30.0,"pct_defauts":0.206349,"pct_plan":0.793651,"mtbf":0,"mttr":0,"dispo":1.0,"perf":1.0,"qualite":0.793651,"trs":0.793651},{"date":"2023-08-10","year":2023,"month":8,"quarter":3,"shift":1,"ligne":"Ligne 4","produit":"Produit 3","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":457,"qte_nc":55,"cause":"","pannes":0,"uph":90.0,"upph":30.0,"pct_defauts":0.107422,"pct_plan":0.725397,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.812698,"qualite":0.892578,"trs":0.725397},{"date":"2023-08-13","year":2023,"month":8,"quarter":3,"shift":2,"ligne":"Ligne 4","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":490,"qte_nc":52,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.095941,"pct_plan":0.680556,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.752778,"qualite":0.904059,"trs":0.680556},{"date":"2023-08-19","year":2023,"month":8,"quarter":3,"shift":3,"ligne":"Ligne 2","produit":"Produit 3","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":441,"qte_nc":90,"cause":"Problème de qualité","pannes":1,"uph":90.0,"upph":30.0,"pct_defauts":0.169492,"pct_plan":0.7,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.842857,"qualite":0.830508,"trs":0.6},{"date":"2023-08-31","year":2023,"month":8,"quarter":3,"shift":3,"ligne":"Ligne 4","produit":"Produit 2","temps_fonct":4.0,"temps_brute":7.0,"temps_perdu":3.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":435,"qte_nc":72,"cause":"Problème de moule","pannes":3,"uph":102.86,"upph":34.29,"pct_defauts":0.142012,"pct_plan":0.604167,"mtbf":1.3333,"mttr":1.0,"dispo":0.571429,"perf":0.704167,"qualite":0.857988,"trs":0.345238},{"date":"2023-09-14","year":2023,"month":9,"quarter":3,"shift":1,"ligne":"Ligne 4","produit":"Produit 3","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":416,"qte_nc":85,"cause":"Problème de moule","pannes":1,"uph":90.0,"upph":30.0,"pct_defauts":0.169661,"pct_plan":0.660317,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.795238,"qualite":0.830339,"trs":0.565986},{"date":"2023-09-21","year":2023,"month":9,"quarter":3,"shift":1,"ligne":"Ligne 2","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":414,"qte_nc":70,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.144628,"pct_plan":0.575,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.672222,"qualite":0.855372,"trs":0.575},{"date":"2023-09-24","year":2023,"month":9,"quarter":3,"shift":1,"ligne":"Ligne 5","produit":"Produit 2","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":479,"qte_nc":87,"cause":"Problème de moule","pannes":1,"uph":102.86,"upph":34.29,"pct_defauts":0.15371,"pct_plan":0.665278,"mtbf":5.0,"mttr":2.0,"dispo":0.714286,"perf":0.786111,"qualite":0.84629,"trs":0.475198},{"date":"2023-09-26","year":2023,"month":9,"quarter":3,"shift":1,"ligne":"Ligne 2","produit":"Produit 1","temps_fonct":5.0,"temps_brute":7.0,"temps_perdu":2.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":453,"qte_nc":61,"cause":"Manque de main-d'oeuvre","pannes":2,"uph":90.0,"upph":22.5,"pct_defauts":0.118677,"pct_plan":0.719048,"mtbf":2.5,"mttr":1.0,"dispo":0.714286,"perf":0.815873,"qualite":0.881323,"trs":0.513605},{"date":"2023-10-13","year":2023,"month":10,"quarter":4,"shift":3,"ligne":"Ligne 5","produit":"Produit 4","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":453,"qte_nc":82,"cause":"","pannes":0,"uph":97.3,"upph":32.43,"pct_defauts":0.153271,"pct_plan":0.665198,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.785609,"qualite":0.846729,"trs":0.665198},{"date":"2023-10-19","year":2023,"month":10,"quarter":4,"shift":1,"ligne":"Ligne 4","produit":"Produit 7","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":426,"qte_nc":81,"cause":"","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.159763,"pct_plan":0.71,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.845,"qualite":0.840237,"trs":0.71},{"date":"2023-10-22","year":2023,"month":10,"quarter":4,"shift":2,"ligne":"Ligne 1","produit":"Produit 2","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":720,"qte_conforme":499,"qte_nc":100,"cause":"","pannes":0,"uph":102.86,"upph":34.29,"pct_defauts":0.166945,"pct_plan":0.693056,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.831944,"qualite":0.833055,"trs":0.693056},{"date":"2023-10-22","year":2023,"month":10,"quarter":4,"shift":3,"ligne":"Ligne 2","produit":"Produit 4","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":479,"qte_nc":64,"cause":"Problème de qualité","pannes":2,"uph":97.3,"upph":32.43,"pct_defauts":0.117864,"pct_plan":0.703377,"mtbf":3.0,"mttr":0.5,"dispo":0.857143,"perf":0.797357,"qualite":0.882136,"trs":0.602895},{"date":"2023-10-27","year":2023,"month":10,"quarter":4,"shift":1,"ligne":"Ligne 1","produit":"Produit 3","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":630,"qte_conforme":435,"qte_nc":81,"cause":"Préparation du matériel","pannes":1,"uph":90.0,"upph":30.0,"pct_defauts":0.156977,"pct_plan":0.690476,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.819048,"qualite":0.843023,"trs":0.591837},{"date":"2023-11-14","year":2023,"month":11,"quarter":4,"shift":3,"ligne":"Ligne 4","produit":"Produit 7","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":600,"qte_conforme":432,"qte_nc":54,"cause":"","pannes":0,"uph":85.71,"upph":28.57,"pct_defauts":0.111111,"pct_plan":0.72,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.81,"qualite":0.888889,"trs":0.72},{"date":"2023-11-19","year":2023,"month":11,"quarter":4,"shift":3,"ligne":"Ligne 5","produit":"Produit 4","temps_fonct":7.0,"temps_brute":7.0,"temps_perdu":0.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":445,"qte_nc":68,"cause":"","pannes":0,"uph":97.3,"upph":32.43,"pct_defauts":0.132554,"pct_plan":0.653451,"mtbf":0,"mttr":0,"dispo":1.0,"perf":0.753304,"qualite":0.867446,"trs":0.653451},{"date":"2023-12-26","year":2023,"month":12,"quarter":4,"shift":2,"ligne":"Ligne 4","produit":"Produit 4","temps_fonct":6.0,"temps_brute":7.0,"temps_perdu":1.0,"arret_plan":1.0,"qte_cible":681,"qte_conforme":408,"qte_nc":89,"cause":"Changement soudain de plan","pannes":1,"uph":97.3,"upph":32.43,"pct_defauts":0.179074,"pct_plan":0.599119,"mtbf":6.0,"mttr":1.0,"dispo":0.857143,"perf":0.729809,"qualite":0.820926,"trs":0.513531}];
+
+/* ── Init ── */
+window.addEventListener('DOMContentLoaded', () => {
+  checkViewport();
+  const stored = loadData();
+  RAW_DATA = (stored && stored.length) ? stored : DEFAULT_DATA;
+  if(!stored || !stored.length) saveData();
+  populateFilters();
+  setLang('fr'); // sets dir, updates all translations, then calls updateAll
+  setTimeout(()=>{
+    const loader=document.getElementById('loader');
+    loader.style.opacity='0'; loader.style.pointerEvents='none';
+  }, 900);
+});
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
